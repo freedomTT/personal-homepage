@@ -1,0 +1,23 @@
+{
+  "name": "personal-homepage",
+  "version": "1.0.0",
+  "private": true,
+  "repository": "https://github.com/freedomTT/personal-homepage.git",
+  "author": "luozhongdao <768851314@qq.com>",
+  "license": "MIT",
+  "dependencies": {
+    "clean-webpack-plugin": "^3.0.0",
+    "copy-webpack-plugin": "^6.0.3",
+    "html-webpack-plugin": "^4.3.0",
+    "jquery": "^3.5.1",
+    "less-loader": "^6.2.0",
+    "postcss-loader": "^3.0.0",
+    "webpack": "^4.44.1",
+    "webpack-cli": "^3.3.12",
+    "webpack-dev-server": "^3.11.0"
+  },
+  "scripts": {
+    "dev": "webpack-dev-server --mode=development --inline --progress --config webpack.config.js",
+    "build": "webpack --mode=production --inline --progress --config webpack.config.js"
+  }
+}
