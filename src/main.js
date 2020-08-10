@@ -5,134 +5,47 @@ import Stats from 'stats-js';
 import * as THREE from 'three';
 import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls';
 
-const config = {
-	stats: true // 显示状态
-};
 
-let camera, scene, controls, renderer, stats;
+let camera, renderer, scene, controls, el
 
-const loader = new THREE.TextureLoader();
-const textures = loader.load(  './static/images/textures.png' );
+el = document.querySelector('#canvas');
 
-const clock = new THREE.Clock();
+function init() {
+	const width = el.offsetWidth;
+	const height = el.offsetHeight;
+	const asp = width / height;
+	// scene
+	scene = new THREE.Scene();
 
-/*
-*
-* 场景1
-*
-* */
-function InitScene1() {
-	this.camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 10);
-	this.camera.position.z = 1;
-	this.scene = new THREE.Scene();
-	let geometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
-	let material = new THREE.MeshNormalMaterial();
+	// camera
+	camera = new THREE.PerspectiveCamera(45, asp, 1, 100000);
+	window.addEventListener('resize', function () {
+		console.log(camera.aspect)
+		camera.aspect = el.offsetWidth / el.offsetHeight;
+		renderer.setSize(el.offsetWidth, el.offsetHeight); // 重新获取
+		camera.updateProjectionMatrix();
+		renderer.render(scene, camera)
+	}, false)
+	camera.position.set(30, 30, 30);
 
-	let mesh = new THREE.Mesh(geometry, material);
-	this.scene.add(mesh);
-	this.controls = initControls(this.camera);
-	// WebGLRenderTarget
-	const renderTargetParameters = {
-		minFilter: THREE.LinearFilter,
-		magFilter: THREE.LinearFilter,
-		format: THREE.RGBFormat,
-		stencilBuffer: false
-	};
-	this.fbo = new THREE.WebGLRenderTarget(window.offsetWidth, window.offsetHeight, renderTargetParameters);
-	this.render = function (delta, rtt) {
-		renderer.setClearColor('#00ff55');
-		if (rtt) {
-			renderer.setRenderTarget(null)
-			renderer.clear();
-			renderer.render(this.scene, this.camera)
-		} else {
-			renderer.setRenderTarget(null);
-			renderer.render(this.scene, this.camera)
-		}
-		this.controls.update()
-	};
+	// renderer
+	renderer = new THREE.WebGLRenderer({antialias: true, alpha: true});
+	renderer.setPixelRatio(window.devicePixelRatio);
+	renderer.setSize(width, height);
+	el.append(renderer.domElement);
+	renderer.setClearColor('#000');
+
+	//按序渲染
+	renderer.sortObjects = true
 }
 
+init();
 
-/*
-*
-* 场景2
-*
-* */
-function InitScene2() {
-	this.camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 10);
-	this.camera.position.z = 1;
-	this.scene = new THREE.Scene();
-	let geometry = new THREE.BoxGeometry(0.1, 0.1, 0.1);
-	let material = new THREE.MeshNormalMaterial();
 
-	let mesh = new THREE.Mesh(geometry, material);
-	this.scene.add(mesh);
-	this.controls = initControls(this.camera);
-	// WebGLRenderTarget
-	const renderTargetParameters = {
-		minFilter: THREE.LinearFilter,
-		magFilter: THREE.LinearFilter,
-		format: THREE.RGBFormat,
-		stencilBuffer: false
-	};
-	this.fbo = new THREE.WebGLRenderTarget(window.offsetWidth, window.offsetHeight, renderTargetParameters);
-	this.render = function (delta, rtt) {
-		renderer.setClearColor('#000000');
-		if (rtt) {
-			renderer.setRenderTarget(null);
-			renderer.clear();
-			renderer.render(this.scene, this.camera)
-		} else {
-			renderer.setRenderTarget(null);
-			renderer.render(this.scene, this.camera)
-		}
-		this.controls.update()
-	};
-}
-
-/*
-*
-* initRender
-*
-* */
-function initRender() {
-	renderer = new THREE.WebGLRenderer({antialias: true});
-	renderer.setSize(window.innerWidth, window.innerHeight);
-	document.body.appendChild(renderer.domElement);
-}
-
-/*
-*
-* 渲染器刷新
-*
-* */
-function animate() {
-	stats.begin();
-	requestAnimationFrame(animate);
-	sceneTransition && sceneTransition.render(clock.getDelta());
-	renderer.render(scene, camera);
-	stats.end();
-}
-
-/*
-*
-* 状态查看器
-*
-* */
-function initStats() {
-	stats = new Stats();
-	stats.showPanel(0);
-	document.body.appendChild(stats.dom);
-}
-
-/*
-*
-* 控制器
-*
-* */
 function initControls(camera) {
-	const controls = new OrbitControls(camera, renderer.domElement);
+	const controls = new OrbitControls(camera, renderer.domElement)
+	// 如果使用animate方法时，将此函数删除
+	//controls.addEventListener( 'change', render );
 	// 使动画循环使用时阻尼或自转 意思是否有惯性
 	controls.enableDamping = true;
 	//动态阻尼系数 就是鼠标拖拽旋转灵敏度
@@ -147,29 +60,101 @@ function initControls(camera) {
 	//设置相机距离原点的最远距离
 	// controls.maxDistance = 1000;
 	//是否开启右键拖拽
-	controls.enablePan = true;
+	controls.enablePan = true
 
 	return controls
 }
 
 
-/*
-*
-* 场景转换
-*
-* */
-function SceneTransition(sceneA, sceneB) {
-	const config = {
-		useTexture: false,
-		texture: textures,
-		animate: true,
-		transition: null,
-		transitionSpeed: 0.01,
+function OneScene(option) {
+
+	//camera
+	this.camera = new THREE.PerspectiveCamera(45, el.offsetWidth / el.offsetHeight, 1, 10000)
+	// this.camera.position = option.cameraPosition
+
+	// Setup scene
+	this.scene = new THREE.Scene()
+	this.scene.add(new THREE.AmbientLight(0x555555))
+
+	//light
+	const light = new THREE.SpotLight(0xffffff, 1.5)
+	light.position.set(0, 500, 2000)
+	this.scene.add(light)
+
+	// WebGLRenderTarget
+	const renderTargetParameters = {
+		minFilter: THREE.LinearFilter,
+		magFilter: THREE.LinearFilter,
+		format: THREE.RGBFormat,
+		stencilBuffer: false
 	};
-	this.scene = new THREE.Scene();
-	this.camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 10);
-	this.camera.position.z = 1;
-	this.material = new THREE.ShaderMaterial({
+	this.fbo = new THREE.WebGLRenderTarget(el.offsetWidth, el.offsetHeight, renderTargetParameters)
+
+	this.controls = initControls(this.camera)
+	this.render = function (delta, rtt) {
+		if (option.renderCallBack) option.renderCallBack()
+		renderer.setClearColor(option.clearColor)
+		if (rtt) {
+			renderer.setRenderTarget(this.fbo)
+			renderer.clear()
+			renderer.render(this.scene, this.camera)
+		} else {
+			renderer.setRenderTarget(null)
+			renderer.render(this.scene, this.camera)
+		}
+		this.controls.update()
+	};
+
+}
+
+const sceneA = new OneScene({
+	cameraPosition: new THREE.Vector3(0, 0, 1200),
+	clearColor: '#fff',
+	renderCallBack: function () {
+
+	}
+})
+const sceneB = new OneScene({
+	cameraPosition: new THREE.Vector3(0, 0, 1200),
+	fov: 45,
+	clearColor: '#000',
+	renderCallBack: function () {
+
+	}
+})
+//场景A中的物体
+for (let i = 0; i < 100; i++) {
+	var geometry = new THREE.BoxGeometry(0.1, 0.1, 0.1);
+	var material = new THREE.MeshBasicMaterial({color: 0x00ff00});
+	var cube = new THREE.Mesh(geometry, material);
+	sceneA.scene.add(cube)
+}
+//场景B中的物体
+for (let i = 0; i < 100; i++) {
+	const sphere = new THREE.Mesh(new THREE.SphereBufferGeometry(5, 20), new THREE.MeshBasicMaterial({color: 'yellow'}))
+	sphere.position.set(300 - Math.random() * 600, 300 - Math.random() * 600, 300 - Math.random() * 600)
+	sceneB.scene.add(sphere)
+}
+
+
+const loader = new THREE.TextureLoader();
+const transitionParams = {
+	useTexture: true, //为 false 默认采用渐变式
+	transition: 0,
+	transitionSpeed: 0.01,
+	texture: loader.load('./static/images/textures.png'),
+	animate: false,
+};
+
+
+function SceneTransition(sceneA, sceneB, transitionParams) {
+	const T = this
+	//
+	T.scene = new THREE.Scene()
+	T.camera = new THREE.OrthographicCamera(el.offsetWidth / -2, el.offsetWidth / 2, el.offsetHeight / 2, el.offsetHeight / -2, -10, 10)
+
+	//
+	T.quadmaterial = new THREE.ShaderMaterial({
 		uniforms: {
 			tDiffuse1: {
 				value: null
@@ -187,7 +172,7 @@ function SceneTransition(sceneA, sceneB) {
 				value: true
 			},
 			tMixTexture: {
-				value: config.texture
+				value: transitionParams.texture
 			}
 		},
 		vertexShader: `varying vec2 vUv;
@@ -214,69 +199,66 @@ function SceneTransition(sceneA, sceneB) {
             		gl_FragColor = mix( texel2, texel1, mixRatio );
             	}
             }`
-	});
-	const geometry = new THREE.PlaneBufferGeometry(window.offsetWidth, window.offsetHeight);
-	const quad = new THREE.Mesh(geometry, this.material);
-	this.scene.add(quad);
-	this.update = function (sceneA, sceneB, animate) {
-		this.sceneA = sceneA;
-		this.sceneB = sceneB;
-		this.material.uniforms.tDiffuse1.value = this.sceneB.fbo.texture;
-		this.material.uniforms.tDiffuse2.value = this.sceneA.fbo.texture;
-		this.material.uniforms.mixRatio.value = 0.0;
-		this.material.uniforms.threshold.value = 0.1;
-		this.material.uniforms.useTexture.value = config.useTexture;
-		this.material.uniforms.tMixTexture.value = config.texture;
+	})
+	const quadgeometry = new THREE.PlaneBufferGeometry(el.offsetWidth, el.offsetHeight)
 
-		config.animate = animate;
-		config.transition = 0
-	};
-	this.update(sceneA, sceneB, config.animate);
-	this.needChange = false;
-	this.render = function (delta) {
-		if (config.transition === 0) {
-			this.sceneA.render(delta, false)
-		} else if (config.transition >= 1) {
-			this.sceneB.render(delta, false);
-			config.animate = false
+	// 类似一种蒙层提供过度效果
+	T.quad = new THREE.Mesh(quadgeometry, T.quadmaterial)
+	T.scene.add(T.quad)
+
+	T.update = function (sceneA, sceneB, animate) {
+		T.sceneA = sceneA
+		T.sceneB = sceneB
+		T.quadmaterial.uniforms.tDiffuse1.value = T.sceneB.fbo.texture
+		T.quadmaterial.uniforms.tDiffuse2.value = T.sceneA.fbo.texture
+		T.quadmaterial.uniforms.mixRatio.value = 0.0
+		T.quadmaterial.uniforms.threshold.value = 0.1
+		T.quadmaterial.uniforms.useTexture.value = transitionParams.useTexture
+		T.quadmaterial.uniforms.tMixTexture.value = transitionParams.texture
+
+		transitionParams.animate = animate
+		transitionParams.transition = 0
+	}
+	T.update(sceneA, sceneB, transitionParams.animate)
+	T.needChange = false
+
+	T.render = function (delta) {
+		if (transitionParams.transition === 0) {
+			T.sceneA.render(delta, false)
+		} else if (transitionParams.transition >= 1) {
+			T.sceneB.render(delta, false)
+			transitionParams.animate = false // 停止
 		} else {
-			this.sceneA.render(delta, true);
-			this.sceneB.render(delta, true);
-			renderer.setRenderTarget(null);
-			renderer.clear();
-			renderer.render(this.scene, this.camera);
+			T.sceneA.render(delta, true)
+			T.sceneB.render(delta, true)
+			renderer.setRenderTarget(null)
+			renderer.clear()
+			renderer.render(T.scene, T.camera)
 		}
-		if (config.animate && config.transition <= 1) {
-			config.transition = config.transition + config.transitionSpeed;
-			this.needChange = true;
-			this.material.uniforms.mixRatio.value = config.transition;
+
+		if (transitionParams.animate && transitionParams.transition <= 1) {
+			transitionParams.transition = transitionParams.transition + transitionParams.transitionSpeed
+			T.needChange = true
+			T.quadmaterial.uniforms.mixRatio.value = transitionParams.transition
 		}
 	}
 }
 
 
-/*
-*
-* 初始化
-*
-* */
-let sceneTransition
+const transition = new SceneTransition(sceneA, sceneB, transitionParams)
 
-function init() {
-	initRender();
-	let scene1 = new InitScene1();
-	let scene2 = new InitScene2();
-	sceneTransition = new SceneTransition(scene1, scene2);
+$('#s1').bind('click', () => {
+	transition.update(sceneA, sceneB, transitionParams)
+})
+$('#s2').bind('click', () => {
+	transition.update(sceneB, sceneA, transitionParams)
+})
 
-	$('body').on('click', () => {
-		sceneTransition.update(scene1, scene2, true);
-	})
+const clock = new THREE.Clock()
 
-	scene = scene1.scene;
-	camera = scene1.camera;
-	if (config.stats) initStats();
-	animate();
+function loop() {
+	requestAnimationFrame(() => loop());
+	transition.render(clock.getDelta())
 }
 
-init();
-
+loop()
