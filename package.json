@@ -25,5 +25,8 @@
   "scripts": {
     "dev": "webpack-dev-server --mode=development --inline --progress --config webpack.config.js",
     "build": "webpack --mode=production --inline --progress --config webpack.config.js"
+  },
+  "devDependencies": {
+    "gltf-pipeline": "^3.0.0"
   }
 }

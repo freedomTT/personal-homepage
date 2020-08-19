@@ -6,13 +6,16 @@ import Stats from 'stats-js';
 import {gsap} from "gsap";
 
 import * as THREE from 'three';
-import {MapControls} from "three/examples/jsm/controls/OrbitControls.js";
-import {MTLLoader} from "three/examples/jsm/loaders/MTLLoader.js";
-import {OBJLoader2} from "three/examples/jsm/loaders/OBJLoader2.js";
-import {MtlObjBridge} from "three/examples/jsm/loaders/obj2/bridge/MtlObjBridge.js";
+
+import {GLTFLoader} from "three/examples/jsm/loaders/GLTFLoader.js";
+import {DRACOLoader} from "three/examples/jsm/loaders/DRACOLoader.js";
+
+import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js';
 
 import {EffectComposer} from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import {RenderPass} from 'three/examples/jsm/postprocessing/RenderPass.js';
+import {UnrealBloomPass} from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+
 import {ShaderPass} from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import {FilmPass} from 'three/examples/jsm/postprocessing/FilmPass.js';
 import {VignetteShader} from 'three/examples/jsm/shaders/VignetteShader.js';
@@ -30,8 +33,8 @@ const appClass = function (elementToBindTo) {
 
 	this.scene = null;
 	this.cameraDefaults = {
-		posCamera: new THREE.Vector3(30.0, 90.0, 200.0),
-		posCameraTarget: new THREE.Vector3(30.0, 85.0, 45.0),
+		posCamera: new THREE.Vector3(0.0, 90.0, 200.0),
+		posCameraTarget: new THREE.Vector3(0.0, 90.0, 0.0),
 		near: 0.1,
 		far: 10000,
 		fov: 45
@@ -51,101 +54,42 @@ appClass.prototype = {
 		this.renderer = new THREE.WebGLRenderer({
 			canvas: this.canvas,
 			antialias: true,
-			autoClear: true
+			autoClear: true,
 		});
 		this.renderer.setClearColor('#000000');
-
+		this.renderer.shadowMap.enabled = true;
+		this.composer = null;
 		this.scene = new THREE.Scene();
-		this.scene.fog = new THREE.FogExp2('#2a2a2a', 0.0025);
+		// this.scene.fog = new THREE.FogExp2('#000514', 0.0025);
 
 		this.camera = new THREE.PerspectiveCamera(this.cameraDefaults.fov, this.aspectRatio, this.cameraDefaults.near, this.cameraDefaults.far);
 		this.resetCamera();
 
-		// this.controls = new MapControls(this.camera, this.renderer.domElement);
-		// this.controls.enableDamping = true;
-		// this.controls.dampingFactor = 0.05;
-		// this.controls.screenSpacePanning = false;
-		// this.controls.minDistance = 0;
-		// this.controls.maxDistance = 200;
-		// this.controls.maxPolarAngle = Math.PI / 2;
-		// this.controls.target = this.cameraTarget;
+		this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+		this.controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
+		this.controls.dampingFactor = 0.05;
+		this.controls.screenSpacePanning = false;
+		this.controls.minDistance = 100;
+		this.controls.maxDistance = 500;
 
-		let PointLight = new THREE.PointLight('#4a4a4a');
-		PointLight.position.set(0, 100, 300);
-		this.scene.add(PointLight);
+		this.controls.maxPolarAngle = Math.PI / 2;
+
+		let ambientLight = new THREE.AmbientLight('#ffffff', 0.8);
+		this.scene.add(ambientLight);
+		// let directionalLight = new THREE.DirectionalLight('#ffffff', 0.3);
+		// directionalLight.position.set(0.5, 0, 0.866); // ~60º
+		// this.scene.add(directionalLight);
 
 		let helper = new THREE.GridHelper(1200, 60, 0xFF4444, 0x404040);
 		this.scene.add(helper);
-
-
-		/**/
-		let loader = new FBXLoader();
-		loader.load('./static/model/Sitting.fbx', (object) => {
-
-			object.mixer = new THREE.AnimationMixer(object);
-			this.mixers.push(object.mixer);
-
-			let action = object.mixer.clipAction(object.animations[0]);
-			action.play();
-
-			object.traverse(function (child) {
-
-				if (child.isMesh) {
-
-					child.castShadow = true;
-					child.receiveShadow = true;
-
-				}
-
-			});
-
-			this.scene.add(object);
-
-		});
-		/**/
-	},
-
-	initContent: function (callback) {
-		let modelName = 'room';
-		let scope = this;
-		let objLoader2 = new OBJLoader2();
-		let callbackOnLoad = function (object3d) {
-			object3d.scale.set(40, 40, 40);
-			object3d.rotateY(-Math.PI / 2);
-			scope.scene.add(object3d);
-			console.log('Loading complete: ' + modelName);
-
-			callback && callback();
-		};
-
-		let onLoadMtl = function (mtlParseResult) {
-			objLoader2.setModelName(modelName);
-			objLoader2.setLogging(true, true);
-			objLoader2.addMaterials(MtlObjBridge.addMaterialsFromMtlLoader(mtlParseResult), true);
-			objLoader2.load('./static/model/room.obj', callbackOnLoad, null, null, null);
-		};
-		let mtlLoader = new MTLLoader();
-		mtlLoader.load('./static/model/room.mtl', onLoadMtl);
-	},
-
-	setEffact: function () {
-
-		this.composer = new EffectComposer(this.renderer);
-		this.composer.addPass(new RenderPass(this.scene, this.camera));
-
-		// let effectFilmBW = new FilmPass(0.25, 0.0, 2048, true);
-		// let gammaCorrection = new ShaderPass(GammaCorrectionShader);
-		// let vignetteShader = new ShaderPass(VignetteShader);
-		// this.composer.addPass(gammaCorrection);
-		// this.composer.addPass(effectFilmBW);
-		// this.composer.addPass(vignetteShader);
-
 	},
 
 	resizeDisplayGL: function () {
 		this.recalcAspectRatio();
 		this.renderer.setSize(this.canvas.offsetWidth, this.canvas.offsetHeight, false);
-
+		if (this.composer) {
+			this.composer.setSize(this.canvas.offsetWidth, this.canvas.offsetHeight);
+		}
 		this.updateCamera();
 	},
 
@@ -156,7 +100,6 @@ appClass.prototype = {
 	resetCamera: function () {
 		this.camera.position.copy(this.cameraDefaults.posCamera);
 		this.cameraTarget.copy(this.cameraDefaults.posCameraTarget);
-
 		this.updateCamera();
 	},
 
@@ -168,23 +111,11 @@ appClass.prototype = {
 
 	render: function () {
 		if (!this.renderer.autoClear) this.renderer.clear();
-		if (this.camera.position.z < 60) {
-			this.renderer.render(this.sceneOne, this.cameraOne);
-		} else {
+		// this.renderer.render(this.scene, this.camera);
+		if (this.composer) {
 			this.composer.render();
 		}
-
-
-		if (this.mixers.length > 0) {
-
-			for (var i = 0; i < this.mixers.length; i++) {
-
-				this.mixers[i].update(this.clock.getDelta());
-
-			}
-
-		}
-
+		this.controls.update(this.clock.getDelta());
 	},
 
 	initAnimate: function () {
@@ -225,19 +156,72 @@ appClass.prototype = {
 				}
 			}
 		});
-
-
 	},
+	loadModels: function () {
 
-	initSceneOne: function () {
-		this.sceneOne = new THREE.Scene();
-		this.cameraOne = new THREE.PerspectiveCamera(this.cameraDefaults.fov, this.aspectRatio, this.cameraDefaults.near, this.cameraDefaults.far);
-		let PointLight = new THREE.PointLight('#4a4a4a');
-		PointLight.position.set(0, 100, 300);
-		this.sceneOne.add(PointLight);
 
-		let helper = new THREE.GridHelper(1200, 60, 0xFF4444, 0x404040);
-		this.sceneOne.add(helper);
+		let loader = new GLTFLoader();
+
+		// Optional: Provide a DRACOLoader instance to decode compressed mesh data
+		let dracoLoader = new DRACOLoader();
+		dracoLoader.setDecoderPath('./static/draco/');
+		loader.setDRACOLoader(dracoLoader);
+		// Load a glTF resource
+		loader.load(
+			// resource URL
+			'./static/model/pine-forest/sceneDraco.gltf',
+			// called when the resource is loaded
+			(gltf) => {
+				gltf.scene.scale.set(0.1, 0.1, 0.1);
+				gltf.scene.rotateY(-Math.PI / 2);
+				gltf.scene.traverse((child) => {
+					if (child.isMesh) {
+						if (child.name === 'Moon_Material_0') { // 太阳
+						}
+						child.castShadow = true;
+						child.receiveShadow = true;
+					}
+				});
+				this.scene.add(gltf.scene);
+				this.scene.updateMatrixWorld(true);
+				const sunPosition = this.scene.getObjectByName('Moon_Material_0').getWorldPosition(new THREE.Vector3());
+
+				const dirLight = new THREE.DirectionalLight('#ffffff');
+				dirLight.castShadow = true;
+				dirLight.position.set(0, 1, -1).normalize();
+				// this.scene.add(dirLight);
+
+
+				/*特效*/
+
+				const params = {
+					exposure: 1.5,
+					bloomStrength: 0.5,
+					bloomThreshold: 0,
+					bloomRadius: 0
+				};
+
+				let renderScene = new RenderPass(this.scene, this.camera);
+
+				let bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+				bloomPass.threshold = params.bloomThreshold;
+				bloomPass.strength = params.bloomStrength;
+				bloomPass.radius = params.bloomRadius;
+
+				this.composer = new EffectComposer(this.renderer);
+				this.composer.addPass(renderScene);
+				this.composer.addPass(bloomPass);
+
+			},
+			// called while loading is progressing
+			(xhr) => {
+				console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+			},
+			// called when loading has errors
+			(error) => {
+				console.log('An error happened');
+			}
+		);
 	}
 };
 
@@ -256,13 +240,8 @@ window.addEventListener('resize', resizeWindow, false);
 
 console.log('Starting initialisation');
 app.initGL();
-app.initSceneOne();
 app.resizeDisplayGL();
-app.initContent(() => {
-	setTimeout(() => {
-		app.initAnimate();
-	}, 1000)
-});
-app.setEffact();
+app.loadModels();
+// app.initAnimate();
 
 render();
