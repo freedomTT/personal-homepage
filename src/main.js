@@ -23,6 +23,7 @@ import {GammaCorrectionShader} from 'three/examples/jsm/shaders/GammaCorrectionS
 
 
 import {FBXLoader} from 'three/examples/jsm/loaders/FBXLoader.js';
+import {edgeTable} from "three/examples/jsm/objects/MarchingCubes";
 
 const appClass = function (elementToBindTo) {
 	this.clock = new THREE.Clock();
@@ -33,8 +34,8 @@ const appClass = function (elementToBindTo) {
 
 	this.scene = null;
 	this.cameraDefaults = {
-		posCamera: new THREE.Vector3(0.0, 90.0, 200.0),
-		posCameraTarget: new THREE.Vector3(0.0, 90.0, 0.0),
+		posCamera: new THREE.Vector3(0.0, 0.0, 200.0),
+		posCameraTarget: new THREE.Vector3(0.0, 0.0, 0.0),
 		near: 0.1,
 		far: 10000,
 		fov: 45
@@ -60,7 +61,7 @@ appClass.prototype = {
 		this.renderer.shadowMap.enabled = true;
 		this.composer = null;
 		this.scene = new THREE.Scene();
-		// this.scene.fog = new THREE.FogExp2('#000514', 0.0025);
+		this.scene.fog = new THREE.FogExp2('#000000', 0.0015);
 
 		this.camera = new THREE.PerspectiveCamera(this.cameraDefaults.fov, this.aspectRatio, this.cameraDefaults.near, this.cameraDefaults.far);
 		this.resetCamera();
@@ -74,7 +75,7 @@ appClass.prototype = {
 
 		this.controls.maxPolarAngle = Math.PI / 2;
 
-		let ambientLight = new THREE.AmbientLight('#ffffff', 0.8);
+		let ambientLight = new THREE.AmbientLight('#ffffff', 0.4);
 		this.scene.add(ambientLight);
 		// let directionalLight = new THREE.DirectionalLight('#ffffff', 0.3);
 		// directionalLight.position.set(0.5, 0, 0.866); // ~60º
@@ -111,10 +112,12 @@ appClass.prototype = {
 
 	render: function () {
 		if (!this.renderer.autoClear) this.renderer.clear();
-		// this.renderer.render(this.scene, this.camera);
 		if (this.composer) {
 			this.composer.render();
+		} else {
+			this.renderer.render(this.scene, this.camera);
 		}
+		this.scenseAnimate();
 		this.controls.update(this.clock.getDelta());
 	},
 
@@ -158,70 +161,71 @@ appClass.prototype = {
 		});
 	},
 	loadModels: function () {
-
-
-		let loader = new GLTFLoader();
-
-		// Optional: Provide a DRACOLoader instance to decode compressed mesh data
-		let dracoLoader = new DRACOLoader();
-		dracoLoader.setDecoderPath('./static/draco/');
-		loader.setDRACOLoader(dracoLoader);
-		// Load a glTF resource
+		let loader = new FBXLoader();
 		loader.load(
-			// resource URL
-			'./static/model/pine-forest/sceneDraco.gltf',
-			// called when the resource is loaded
-			(gltf) => {
-				gltf.scene.scale.set(0.1, 0.1, 0.1);
-				gltf.scene.rotateY(-Math.PI / 2);
-				gltf.scene.traverse((child) => {
-					if (child.isMesh) {
-						if (child.name === 'Moon_Material_0') { // 太阳
-						}
-						child.castShadow = true;
-						child.receiveShadow = true;
-					}
-				});
-				this.scene.add(gltf.scene);
-				this.scene.updateMatrixWorld(true);
-				const sunPosition = this.scene.getObjectByName('Moon_Material_0').getWorldPosition(new THREE.Vector3());
-
-				const dirLight = new THREE.DirectionalLight('#ffffff');
-				dirLight.castShadow = true;
-				dirLight.position.set(0, 1, -1).normalize();
-				// this.scene.add(dirLight);
-
-
+			'./static/model/running.fbx',
+			(object) => {
+				this.scene.add(object)
 				/*特效*/
-
-				const params = {
-					exposure: 1.5,
-					bloomStrength: 0.5,
-					bloomThreshold: 0,
-					bloomRadius: 0
-				};
-
-				let renderScene = new RenderPass(this.scene, this.camera);
-
-				let bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
-				bloomPass.threshold = params.bloomThreshold;
-				bloomPass.strength = params.bloomStrength;
-				bloomPass.radius = params.bloomRadius;
-
-				this.composer = new EffectComposer(this.renderer);
-				this.composer.addPass(renderScene);
-				this.composer.addPass(bloomPass);
+				// const params = {
+				// 	exposure: 1.5,
+				// 	bloomStrength: 0.4,
+				// 	bloomThreshold: 0,
+				// 	bloomRadius: 0
+				// };
+				//
+				// let renderScene = new RenderPass(this.scene, this.camera);
+				//
+				// let bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+				// bloomPass.threshold = params.bloomThreshold;
+				// bloomPass.strength = params.bloomStrength;
+				// bloomPass.radius = params.bloomRadius;
+				//
+				// this.composer = new EffectComposer(this.renderer);
+				// this.composer.addPass(renderScene);
+				// this.composer.addPass(bloomPass);
 
 			},
-			// called while loading is progressing
 			(xhr) => {
 				console.log((xhr.loaded / xhr.total * 100) + '% loaded');
 			},
-			// called when loading has errors
 			(error) => {
 				console.log('An error happened');
 			}
 		);
+	},
+	loadScense: function () {
+		const center = [0, 0];
+		const r = 50;
+		const speed = 3;
+		const colors = ['#4892ff', '#ff475d'];
+		const name = 'lineGroup';
+		let linesGroup = new THREE.Group();
+		linesGroup.name = name;
+		for (let i = 0; i < 1000; i++) {
+			let geometry = new THREE.BoxBufferGeometry(0.3, 0.3, Math.random() * 20);
+			let material = new THREE.MeshBasicMaterial({color: colors[i % 2]});
+			let line = new THREE.Mesh(geometry, material);
+			line._speed = 1 + Math.random() * speed;
+
+			let arg = Math.floor(Math.random() * (115 - (-115))) + (-115);
+			let x = center[0] + Math.sin(arg * Math.PI / 180) * r + Math.random() * 15;
+			let y = center[1] + Math.cos(arg * Math.PI / 180) * r + Math.random() * 15;
+			line.position.set(x, y, Math.random() * 300);
+			linesGroup.add(line);
+		}
+		this.scene.add(linesGroup);
+	},
+	scenseAnimate: function () {
+		let lines = this.scene.getObjectByName('lineGroup').children;
+		for (let i = 0; i < lines.length; i++) {
+			let pos = lines[i];
+			if (pos.position.z < -300) {
+				pos.position.z = 300
+			} else {
+				pos.position.z -= pos._speed;
+			}
+		}
 	}
 };
 
@@ -241,6 +245,7 @@ window.addEventListener('resize', resizeWindow, false);
 console.log('Starting initialisation');
 app.initGL();
 app.resizeDisplayGL();
+app.loadScense();
 app.loadModels();
 // app.initAnimate();
 
