@@ -118,11 +118,13 @@ appClass.prototype = {
         } else {
             this.renderer.render(this.scene, this.camera);
         }
-        this.scenseAnimate();
         if (this.mixer) {
             this.mixer.update(delta);
         }
         this.controls.update(delta);
+
+        this.scenseAnimate();
+        this.floorAnimate();
     },
 
     initAnimate: function () {
@@ -164,6 +166,7 @@ appClass.prototype = {
             }
         });
     },
+    // load human model
     loadModels: function () {
         let loader = new FBXLoader();
         loader.load(
@@ -191,26 +194,6 @@ appClass.prototype = {
                 }
                 actions[0].play();
                 this.scene.add(model)
-
-                /*特效*/
-                // const params = {
-                // 	exposure: 1.5,
-                // 	bloomStrength: 0.4,
-                // 	bloomThreshold: 0,
-                // 	bloomRadius: 0
-                // };
-                //
-                // let renderScene = new RenderPass(this.scene, this.camera);
-                //
-                // let bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
-                // bloomPass.threshold = params.bloomThreshold;
-                // bloomPass.strength = params.bloomStrength;
-                // bloomPass.radius = params.bloomRadius;
-                //
-                // this.composer = new EffectComposer(this.renderer);
-                // this.composer.addPass(renderScene);
-                // this.composer.addPass(bloomPass);
-
             },
             (xhr) => {
                 console.log((xhr.loaded / xhr.total * 100) + '% loaded');
@@ -220,6 +203,36 @@ appClass.prototype = {
             }
         );
     },
+    composerOne: function () {
+        const params = {
+            exposure: 1.5,
+            bloomStrength: 0.6,
+            bloomThreshold: 0,
+            bloomRadius: 0
+        };
+
+        let bloomLayer = new THREE.Layers();
+        bloomLayer.set(1);
+
+        let renderScene = new RenderPass(this.scene, this.camera);
+
+        let bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+        bloomPass.threshold = params.bloomThreshold;
+        bloomPass.strength = params.bloomStrength;
+        bloomPass.radius = params.bloomRadius;
+
+        this.composer = new EffectComposer(this.renderer);
+        this.composer.addPass(renderScene);
+        this.composer.addPass(bloomPass);
+    },
+    // add floor
+    loadFloor: function () {
+    },
+    // addLightGroup Animate
+    floorAnimate: function () {
+
+    },
+    // addLightGroup
     loadScense: function () {
         const center = [0, 0];
         const r = 60;
@@ -240,8 +253,10 @@ appClass.prototype = {
             line.position.set(x, y, Math.random() * 300);
             linesGroup.add(line);
         }
+        linesGroup.layers.enable( 1 );
         this.scene.add(linesGroup);
     },
+    // addLightGroup Animate
     scenseAnimate: function () {
         let lines = this.scene.getObjectByName('lineGroup').children;
         for (let i = 0; i < lines.length; i++) {
@@ -271,8 +286,10 @@ window.addEventListener('resize', resizeWindow, false);
 console.log('Starting initialisation');
 app.initGL();
 app.resizeDisplayGL();
+app.composerOne();
 app.loadScense();
 app.loadModels();
+app.loadFloor();
 // app.initAnimate();
 
 render();
