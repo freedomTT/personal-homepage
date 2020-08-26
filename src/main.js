@@ -15,6 +15,9 @@ import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js';
 import {EffectComposer} from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import {RenderPass} from 'three/examples/jsm/postprocessing/RenderPass.js';
 import {UnrealBloomPass} from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import {NodePass} from 'three/examples/jsm/nodes/postprocessing/NodePass.js';
+import * as Nodes from 'three/examples/jsm/nodes/Nodes.js';
+
 
 import {ShaderPass} from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import {FilmPass} from 'three/examples/jsm/postprocessing/FilmPass.js';
@@ -36,14 +39,12 @@ const appClass = function (elementToBindTo) {
 	this.recalcAspectRatio();
 
 	this.cameraDefaults = {
-		posCamera: new THREE.Vector3(0.0, 0.0, 200.0),
-		posCameraTarget: new THREE.Vector3(0.0, 0.0, 0.0),
+		posCamera: new THREE.Vector3(0, 10, 250),
+		posCameraTarget: new THREE.Vector3(0, 10, 0),
 		near: 0.1,
 		far: 10000,
 		fov: 45
 	};
-	this.camera = null;
-	this.cameraTarget = this.cameraDefaults.posCameraTarget;
 
 	this.controls = null;
 	this.mixers = [];
@@ -55,20 +56,19 @@ appClass.prototype = {
 
 	initGL: function () {
 		this.activeSceneIndex = 0;
-		this.porcess = 0;
+		this.process = {
+			value: 0
+		};
 		this.renderer = new THREE.WebGLRenderer({
 			canvas: this.canvas,
 			antialias: true,
 			autoClear: true,
 		});
-		this.renderer.setClearColor('#020206');
+		this.renderer.setClearColor('#000000');
 		this.renderer.shadowMap.enabled = true;
 		this.renderer.setScissorTest(true);
 
-		this.camera = new THREE.PerspectiveCamera(this.cameraDefaults.fov, this.aspectRatio, this.cameraDefaults.near, this.cameraDefaults.far);
-		this.resetCamera();
-
-		// this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+		// this.controls = new OrbitControls(this.personCamera, this.renderer.domElement);
 		// this.controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
 		// this.controls.dampingFactor = 0.05;
 		// this.controls.screenSpacePanning = false;
@@ -93,34 +93,34 @@ appClass.prototype = {
 		this.aspectRatio = (this.canvas.offsetHeight === 0) ? 1 : this.canvas.offsetWidth / this.canvas.offsetHeight;
 	},
 
-	resetCamera: function () {
-		this.camera.position.copy(this.cameraDefaults.posCamera);
-		this.cameraTarget.copy(this.cameraDefaults.posCameraTarget);
-		this.updateCamera();
-	},
-
 	updateCamera: function () {
-		this.camera.aspect = this.aspectRatio;
-		this.camera.lookAt(this.cameraTarget);
-		this.camera.updateProjectionMatrix();
+		if (this.personCamera) {
+			this.personCamera.aspect = this.aspectRatio;
+			this.personCamera.updateProjectionMatrix();
+		}
+		if (this.dnaCamera) {
+			this.dnaCamera.aspect = this.aspectRatio;
+			this.dnaCamera.updateProjectionMatrix();
+		}
 	},
 
 	render: function () {
 		let delta = this.clock.getDelta();
-		let porcess = this.porcess;
+		let process = this.process.value;
 		let wH = window.innerHeight;
 		let wW = window.innerWidth;
+		let pH = wH * (process / 100);
 		if (!this.renderer.autoClear) this.renderer.clear();
 		if (this.bloomComposerScenePerson) {
-			this.renderer.setScissor(0, 0, wW, wH * (100 - porcess) / 100);
+			this.renderer.setScissor(0, pH, wW, wH);
 			this.bloomComposerScenePerson.render();
-			this.renderer.setScissor(0, wH * porcess / 100, wW, wH);
-			this.renderer.render(this.dnaScene, this.camera);
+			this.renderer.setScissor(0, 0, wW, pH);
+			this.renderer.render(this.dnaScene, this.dnaCamera);
 		} else {
-			this.renderer.setScissor(0, 0, wW, wH * (100 - porcess) / 100);
-			this.renderer.render(this.personScene, this.camera);
-			this.renderer.setScissor(0, wH * porcess / 100, wW, wH);
-			this.renderer.render(this.dnaScene, this.camera);
+			this.renderer.setScissor(0, pH, wW, wH);
+			this.renderer.render(this.personScene, this.personCamera);
+			this.renderer.setScissor(0, 0, wW, pH);
+			this.renderer.render(this.dnaScene, this.dnaCamera)
 		}
 		if (this.mixer) {
 			this.mixer.update(delta);
@@ -129,6 +129,7 @@ appClass.prototype = {
 			this.controls.update();
 		}
 		this.scensePersonAnimate();
+		// console.log(this.personCamera.position);
 	},
 
 	/*
@@ -142,7 +143,7 @@ appClass.prototype = {
 			bloomRadius: 0
 		};
 
-		let renderScene = new RenderPass(this.personScene, this.camera);
+		let renderScene = new RenderPass(this.personScene, this.personCamera);
 
 		let bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
 		bloomPass.threshold = params.bloomThreshold;
@@ -153,12 +154,37 @@ appClass.prototype = {
 		this.bloomComposerScenePerson.addPass(renderScene);
 		this.bloomComposerScenePerson.addPass(bloomPass);
 
+
+		let nodepass = new NodePass();
+		let screen = new Nodes.ScreenNode();
+		let hue = new Nodes.FloatNode();
+		let sataturation = new Nodes.FloatNode(1);
+		let vibrance = new Nodes.FloatNode();
+		let brightness = new Nodes.FloatNode(0);
+		let contrast = new Nodes.FloatNode(1);
+		let hueNode = new Nodes.ColorAdjustmentNode(screen, hue, Nodes.ColorAdjustmentNode.HUE);
+		let satNode = new Nodes.ColorAdjustmentNode(hueNode, sataturation, Nodes.ColorAdjustmentNode.SATURATION);
+		let vibranceNode = new Nodes.ColorAdjustmentNode(satNode, vibrance, Nodes.ColorAdjustmentNode.VIBRANCE);
+		let brightnessNode = new Nodes.ColorAdjustmentNode(vibranceNode, brightness, Nodes.ColorAdjustmentNode.BRIGHTNESS);
+		let contrastNode = new Nodes.ColorAdjustmentNode(brightnessNode, contrast, Nodes.ColorAdjustmentNode.CONTRAST);
+		nodepass.input = contrastNode;
+		/*todo*/
+		contrast.value = 2;
+		this.__p_nodepass_contrast = contrast;
+		nodepass.needsUpdate = true;
+		this.bloomComposerScenePerson.addPass(nodepass);
 	},
 
 	/*
 	* @desc scenses
 	*  */
 	initPersonScense() {
+
+		this.personCamera = new THREE.PerspectiveCamera(this.cameraDefaults.fov, this.aspectRatio, this.cameraDefaults.near, this.cameraDefaults.far);
+		this.personCamera.aspect = this.aspectRatio;
+		this.personCamera.position.set(0, 10, 250);
+		this.personCamera.lookAt(0, 10, 0);
+		this.personCamera.updateProjectionMatrix();
 
 		this.personScene = new THREE.Scene();
 		this.composerBloom();
@@ -244,6 +270,52 @@ appClass.prototype = {
 		this.personScene.add(this.circleMeshCp);
 		let cubeShadow = new ShadowMesh(this.circleMeshCp);
 		this.personScene.add(cubeShadow);
+
+		// params
+
+		function createScensePersonCameraPath() {
+			let cameraCurve = new THREE.CatmullRomCurve3([
+				new THREE.Vector3(0, 10, 250),
+				new THREE.Vector3(0, 10, 130),
+				new THREE.Vector3(10, 10, 130),
+				new THREE.Vector3(100, 72, 47),
+				new THREE.Vector3(123, 100, 34),
+				new THREE.Vector3(168, 12, -6),
+				new THREE.Vector3(136, 46, -187)
+			]);
+			cameraCurve.curveType = 'catmullrom';
+			cameraCurve.tension = 0.2;
+			let targetCurve = new THREE.CatmullRomCurve3([
+				new THREE.Vector3(0, 10, 0),
+				new THREE.Vector3(0, 10, 0),
+				new THREE.Vector3(0, 10, 0),
+				new THREE.Vector3(0, 10, 0),
+				new THREE.Vector3(0, 10, 0),
+				new THREE.Vector3(0, 10, 0),
+				new THREE.Vector3(0, 10, -200),
+			]);
+			targetCurve.curveType = 'catmullrom';
+
+			let points = cameraCurve.getPoints(100);
+			let geometry = new THREE.BufferGeometry().setFromPoints(points);
+			let material = new THREE.LineBasicMaterial({color: 0xff0000});
+			let points2 = targetCurve.getPoints(100);
+			// let curveObject = new THREE.Line(geometry, material);
+			// this.personScene.add(curveObject);
+
+			let geometry2 = new THREE.BufferGeometry().setFromPoints(points2);
+			let material2 = new THREE.LineBasicMaterial({color: 0x00ff00});
+			// let curveObject2 = new THREE.Line(geometry2, material2);
+			// this.personScene.add(curveObject2);
+
+			return {cameraCurve, targetCurve}
+		}
+
+		this.personCameraPoints = createScensePersonCameraPath.bind(this)();
+		this.personSceneProcess = {
+			value: 0,
+			targetIndex: 0
+		};
 	},
 
 	scensePersonAnimate: function () {
@@ -273,9 +345,23 @@ appClass.prototype = {
 			this.circleMeshCp.scale.set(s, s, s);
 			this.circleMeshCp.material.opacity = 0.15 * Math.acos(this.circleMeshCp._params.fl) - 0.1
 		}
+
+
+		let cameraPoints = this.personCameraPoints;
+		let sceneCameraPoint = cameraPoints.cameraCurve.getPointAt(this.personSceneProcess && this.personSceneProcess.value ? this.personSceneProcess.value : 0);
+		let sceneCameraTargetPoint = cameraPoints.targetCurve.getPointAt(this.personSceneProcess && this.personSceneProcess.targetIndex ? this.personSceneProcess.targetIndex : 0);
+		this.personCamera.lookAt(sceneCameraTargetPoint);
+		this.personCamera.position.set(sceneCameraPoint.x, sceneCameraPoint.y, sceneCameraPoint.z);
 	},
 
 	initDNAScense() {
+
+		this.dnaCamera = new THREE.PerspectiveCamera(this.cameraDefaults.fov, this.aspectRatio, this.cameraDefaults.near, this.cameraDefaults.far);
+		this.dnaCamera.aspect = this.aspectRatio;
+		this.dnaCamera.position.set(0, 10, 250);
+		this.dnaCamera.lookAt(0, 10, 0);
+		this.dnaCamera.updateProjectionMatrix();
+
 		this.dnaScene = new THREE.Scene();
 		let loader = new FBXLoader();
 		loader.load(
@@ -312,27 +398,41 @@ appClass.prototype = {
 	},
 
 	initTimeLine: function () {
-		let tl = gsap.timeline({});
-		let step1 = gsap.to(this.camera.position, 5, {z: 45, y: 85});
-		tl.add(step1);
+		let tl = gsap.timeline({smoothChildTiming:true});
+
+		tl.addLabel("personScene", 0);
+		// camera move
+		let step1 = gsap.to(this.personSceneProcess, 5, {value: 1});
+		tl.add(step1, 'personScene');
+		// camera target move
+		let step2 = gsap.to(this.personSceneProcess, 2.5, {targetIndex: 1});
+		tl.add(step2, 'personScene+=2.5');
+		// person scene dark
+		let step3 = gsap.to(this.__p_nodepass_contrast, 1, {value: 0});
+		tl.add(step3, 'personScene+=3.5');
+
+		// scene 0 to 1
+		let step4 = gsap.to(this.process, 2, {value: 100});
+		tl.add(step4, 'personScene+=3');
+
 		tl.pause();
 
 		let upScroll = () => {
 			tl.pause();
-			tl.progress((tl.progress() * 100 + 1) / 100);
+			tl.progress((tl.progress() * 100 - 10) / 100);
 			updateIndex();
 		};
 
 		let downScroll = () => {
 			tl.pause();
-			tl.progress((tl.progress() * 100 - 1) / 100);
+			tl.progress((tl.progress() * 100 + 10) / 100);
 			updateIndex();
 		};
 
 		let updateIndex = () => {
+			let process = tl.progress();
 			this.activeSceneIndex = 0;
-			this.porcess = tl.progress() * 100;
-			console.log(this.porcess)
+			console.log('场景：' + this.activeSceneIndex + ';' + '进度：' + process);
 		};
 
 		$(document).bind('mousewheel DOMMouseScroll', function (event) {
@@ -340,21 +440,21 @@ appClass.prototype = {
 			let detail = event.originalEvent.detail;
 			if (event.originalEvent.wheelDelta) { //判断浏览器IE,谷歌滚轮事件
 				if (wheel > 0) {
-					console.log('上滚');
-					downScroll();
+					console.log('👆');
+					upScroll();
 				}
 				if (wheel < 0) {
-					console.log('下滚');
-					upScroll();
+					console.log('👇');
+					downScroll();
 				}
 			} else if (event.originalEvent.detail) {  //Firefox滚轮事件
 				if (detail > 0) {
-					console.log('下滚');
-					upScroll();
+					console.log('👇');
+					downScroll();
 				}
 				if (detail < 0) {
-					console.log('上滚');
-					downScroll();
+					console.log('👆');
+					upScroll();
 				}
 			}
 		});
@@ -363,8 +463,6 @@ appClass.prototype = {
 
 };
 
-
-console.log('Starting initialisation');
 let app = new appClass(document.querySelector('#canvas'));
 
 let render = function () {
