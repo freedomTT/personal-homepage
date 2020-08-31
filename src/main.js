@@ -18,12 +18,15 @@ import {UnrealBloomPass} from 'three/examples/jsm/postprocessing/UnrealBloomPass
 import {NodePass} from 'three/examples/jsm/nodes/postprocessing/NodePass.js';
 import * as Nodes from 'three/examples/jsm/nodes/Nodes.js';
 
+import {Water} from 'three/examples/jsm/objects/Water2.js';
+
 
 import {ShaderPass} from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import {FilmPass} from 'three/examples/jsm/postprocessing/FilmPass.js';
 import {VignetteShader} from 'three/examples/jsm/shaders/VignetteShader.js';
 import {GammaCorrectionShader} from 'three/examples/jsm/shaders/GammaCorrectionShader.js';
 import {ShadowMesh} from 'three/examples/jsm/objects/ShadowMesh.js';
+import {WaterRefractionShader} from 'three/examples/jsm/shaders/WaterRefractionShader.js';
 
 
 import {FBXLoader} from 'three/examples/jsm/loaders/FBXLoader.js';
@@ -109,38 +112,60 @@ appClass.prototype = {
 		let wW = window.innerWidth;
 		let pH = wH * (process / 100);
 		if (!this.renderer.autoClear) this.renderer.clear();
+		let frountParams = [0, pH, wW, wH];
+		let behindParams = [0, 0, wW, pH];
 
 
-		this.renderer.setScissor(0, pH, wW, wH);
-		if (this.bloomComposerScenePerson) {
-			this.bloomComposerScenePerson.render();
-		} else {
-			this.renderer.render(this.personScene, this.personCamera);
+		this.renderer.setScissor(...frountParams);
+
+		switch (this.activeSceneIndex) {
+			case 0:
+				renderPersonScene.call(this);
+				break
+			case 1:
+				renderDNAScene.call(this);
+				break
 		}
-		this.renderer.setScissor(0, 0, wW, pH);
-		if (this.bloomComposerSceneDNA) {
-			this.bloomComposerSceneDNA.render();
-		} else {
-			this.renderer.render(this.dnaScene, this.dnaCamera);
+
+		this.renderer.setScissor(...behindParams);
+
+		switch (this.activeSceneIndex) {
+			case 0:
+				renderDNAScene.call(this);
+				break
+			case 1:
+				break
 		}
-		//todo
-		this.renderer.setScissor(0, 0, wW, wH);
-		this.renderer.render(this.seaScene, this.seaCamera);
-		if (this.personMixer) {
-			this.personMixer.update(delta);
+
+
+		function renderPersonScene() {
+			if (this.bloomComposerScenePerson) {
+				this.bloomComposerScenePerson.render();
+			} else {
+				this.renderer.render(this.personScene, this.personCamera);
+			}
+			if (this.personScene) {
+				this.scenePersonAnimate();
+				if (this.personMixer) {
+					this.personMixer.update(delta);
+				}
+			}
 		}
-		if (this.fishMixer) {
-			this.fishMixer.update(delta);
+
+		function renderDNAScene() {
+			if (this.bloomComposerSceneDNA) {
+				this.bloomComposerSceneDNA.render();
+			} else {
+				this.renderer.render(this.dnaScene, this.dnaCamera);
+			}
+			if (this.dnaScene) {
+				this.sceneDNAAnimate();
+			}
 		}
+
+
 		if (this.controls) {
 			this.controls.update();
-		}
-
-		if (this.personScene) {
-			this.scenePersonAnimate();
-		}
-		if (this.dnaScene) {
-			this.sceneDNAAnimate();
 		}
 		// timeline 平滑过度
 		if (!this.scrolling && this.timeline && (this.timeline.process !== this.timeline.tl.progress())) {
@@ -200,15 +225,15 @@ appClass.prototype = {
 		let contrastNode = new Nodes.ColorAdjustmentNode(brightnessNode, contrast, Nodes.ColorAdjustmentNode.CONTRAST);
 		nodepass.input = contrastNode;
 		contrast.value = 2;
-		this.__p_nodepass_contrast = contrast;
+		this.personSceneProcess.nodepass_contrast = contrast;
 		nodepass.needsUpdate = true;
 		this.bloomComposerScenePerson.addPass(nodepass);
 	},
 
 	composerSceneDNA: function () {
 		const params = {
-			exposure: 1,
-			bloomStrength: 1.5,
+			exposure: 0,
+			bloomStrength: 0,
 			bloomThreshold: 0,
 			bloomRadius: 0
 		};
@@ -251,29 +276,36 @@ appClass.prototype = {
 
 		this.personCamera = new THREE.PerspectiveCamera(this.cameraDefaults.fov, this.aspectRatio, this.cameraDefaults.near, this.cameraDefaults.far);
 		this.personCamera.aspect = this.aspectRatio;
-		this.personCamera.position.set(0, 10, 250);
+		this.personCamera.position.set(0, 50, 250);
 		this.personCamera.lookAt(0, 10, 0);
 		this.personCamera.updateProjectionMatrix();
 
 		this.personScene = new THREE.Scene();
+
 		// addLightGroup
 		const center = [0, 0];
 		const r = 60;
 		const speed = 3;
-		const colors = ['#ff0039', '#001eff'];
+		const colors = ['#ff3983', '#3971ff'];
 		const name = 'lineGroup';
 		let linesGroup = new THREE.Group();
 		linesGroup.name = name;
 		for (let i = 0; i < 200; i++) {
 			let geometry = new THREE.BoxBufferGeometry(0.3, 0.3, Math.random() * 50 + 10);
-			let material = new THREE.MeshBasicMaterial({color: colors[i % 2]});
+			let material = new THREE.MeshStandardMaterial({
+				emissive: colors[i % 2],
+				color: '#ffffff',
+				roughness: 0.5,
+			});
 			let line = new THREE.Mesh(geometry, material);
-			line._speed = 1 + Math.random() * speed;
+			line._speed = 5 + Math.random() * speed;
 
-			let arg = Math.floor(Math.random() * (115 - (-115))) + (-115);
-			let x = center[0] + Math.sin(arg * Math.PI / 180) * r + Math.random() * 15;
-			let y = center[1] + Math.cos(arg * Math.PI / 180) * r + Math.random() * 15;
-			line.position.set(x, y, Math.random() * 300);
+			let arg = Math.floor(Math.random() * (90 - (-90))) + (-90);
+			let range = Math.floor(Math.random() * (10 - (-10))) + (-10);
+			let z = Math.floor(Math.random() * (350 - (-350))) + (-350);
+			let x = center[0] + Math.sin(arg * Math.PI / 180) * r + range;
+			let y = center[1] + Math.cos(arg * Math.PI / 180) * r + range;
+			line.position.set(x, y, z);
 			linesGroup.add(line);
 		}
 		linesGroup.layers.enable(1);
@@ -282,12 +314,29 @@ appClass.prototype = {
 		// mirror
 		let geometry = new THREE.PlaneBufferGeometry(1000, 1000, 1);
 		let groundMirror = new Reflector(geometry, {
-			clipBias: 0,
-			color: '#777777',
+			clipBias: 0.003,
+			textureWidth: window.innerWidth * window.devicePixelRatio,
+			textureHeight: window.innerHeight * window.devicePixelRatio,
+			color: 0x999999,
 		});
+
 		groundMirror.position.y = -0.5;
 		groundMirror.rotateX(-Math.PI / 2);
 		this.personScene.add(groundMirror);
+
+		// background
+		let bgGeometry = new THREE.SphereGeometry(1000, 50, 50);
+		let bgMaterial = new THREE.MeshPhongMaterial({
+			color: '#0c002c',
+			shininess: 0,
+			side: THREE.BackSide
+		});
+		let bgMesh = new THREE.Mesh(bgGeometry, bgMaterial);
+
+		this.personScene.add(bgMesh);
+
+		let ambientLight = new THREE.AmbientLight('#ffffff', 0.1);
+		this.personScene.add(ambientLight);
 
 		// load human model
 		let loader = new FBXLoader();
@@ -310,8 +359,6 @@ appClass.prototype = {
 				actions[0].play();
 				this.personScene.add(model);
 
-				let ambientLight = new THREE.AmbientLight('#ffffff', 0.2);
-				this.personScene.add(ambientLight);
 			},
 			(xhr) => {
 				console.log((xhr.loaded / xhr.total * 100) + '% loaded');
@@ -321,12 +368,12 @@ appClass.prototype = {
 			}
 		);
 
-		// add floor
+		// add floorCircle
 		let circleCpGeometry = new THREE.CircleGeometry(0.2, 20);
 		let circleCpMaterial = new THREE.MeshBasicMaterial({
 			side: THREE.DoubleSide,
 			blending: THREE.AdditiveBlending,
-			color: '#003b84',
+			color: '#2a2a2a',
 			depthTest: true,
 			transparent: true,
 			opacity: 0.6
@@ -339,12 +386,12 @@ appClass.prototype = {
 		let cubeShadow = new ShadowMesh(this.circleMeshCp);
 		this.personScene.add(cubeShadow);
 
-		// params
+		// create camera path params
 
 		function createScensePersonCameraPath() {
 			let cameraCurve = new THREE.CatmullRomCurve3([
-				new THREE.Vector3(0, 10, 250),
-				new THREE.Vector3(0, 10, 130),
+				new THREE.Vector3(0, 50, 250),
+				new THREE.Vector3(0, 30, 130),
 				new THREE.Vector3(10, 10, 130),
 				new THREE.Vector3(50, 30, 80),
 				new THREE.Vector3(100, 72, 47),
@@ -376,10 +423,17 @@ appClass.prototype = {
 		}
 
 		this.personCameraPoints = createScensePersonCameraPath.bind(this)();
+
+		// sceneProcess params
 		this.personSceneProcess = {
+			nodepass_contrast: 0,
 			value: 0,
-			targetIndex: 0
+			targetIndex: 0,
+			cameraShakeRange: [2, 2.5],
+			cameraShakeSpeed: [0.5, 0.6],
+			cameraShakePosition: [0, 0]
 		};
+
 		this.composerScenePerson();
 	},
 
@@ -392,8 +446,8 @@ appClass.prototype = {
 		}
 		for (let i = 0; i < lines.length; i++) {
 			let pos = lines[i];
-			if (pos.position.z < -300) {
-				pos.position.z = 300
+			if (pos.position.z < -350) {
+				pos.position.z = 350
 			} else {
 				pos.position.z -= pos._speed;
 			}
@@ -406,15 +460,33 @@ appClass.prototype = {
 			} else {
 				this.circleMeshCp._params.fl += 0.06;
 			}
-			let s = 300 * Math.asin(this.circleMeshCp._params.fl) + 1;
+			let s = 200 * Math.asin(this.circleMeshCp._params.fl) + 1;
 			this.circleMeshCp.scale.set(s, s, s);
 			this.circleMeshCp.material.opacity = 0.15 * Math.acos(this.circleMeshCp._params.fl) - 0.1
 		}
+
+		// camera shake
+		let x = this.personSceneProcess.cameraShakePosition[0] += this.personSceneProcess.cameraShakeSpeed[0];
+		let y = this.personSceneProcess.cameraShakePosition[1] += this.personSceneProcess.cameraShakeSpeed[1];
+
+		//判断相机变量的位置 触壁speed取反
+		if (x >= this.personSceneProcess.cameraShakeRange[0] || x <= -this.personSceneProcess.cameraShakeRange[0]) {
+			this.personSceneProcess.cameraShakeSpeed[0] *= -1;
+		}
+
+		if (y >= this.personSceneProcess.cameraShakeRange[1] || y <= -this.personSceneProcess.cameraShakeRange[1]) {
+			this.personSceneProcess.cameraShakeSpeed[1] *= -1;
+		}
+
 		let cameraPoints = this.personCameraPoints;
 		let sceneCameraPoint = cameraPoints.cameraCurve.getPointAt(this.personSceneProcess && this.personSceneProcess.value ? this.personSceneProcess.value : 0);
 		let sceneCameraTargetPoint = cameraPoints.targetCurve.getPointAt(this.personSceneProcess && this.personSceneProcess.targetIndex ? this.personSceneProcess.targetIndex : 0);
+		sceneCameraTargetPoint.x += x;
+		sceneCameraTargetPoint.y += y;
+
 		this.personCamera.lookAt(sceneCameraTargetPoint);
-		this.personCamera.position.set(sceneCameraPoint.x, sceneCameraPoint.y, sceneCameraPoint.z);
+
+		this.personCamera.position.set(sceneCameraPoint.x + x * 0.2, sceneCameraPoint.y + y * 0.2, sceneCameraPoint.z);
 	},
 
 	initDNAScense() {
@@ -426,13 +498,95 @@ appClass.prototype = {
 				z: 0
 			}
 		};
+		this.dnaScene = new THREE.Scene();
 		this.dnaCamera = new THREE.PerspectiveCamera(this.cameraDefaults.fov, this.aspectRatio, this.cameraDefaults.near, this.cameraDefaults.far);
 		this.dnaCamera.aspect = this.aspectRatio;
 		this.dnaCamera.position.set(0, 10, 250);
 		this.dnaCamera.lookAt(0, 10, 0);
 		this.dnaCamera.updateProjectionMatrix();
 
-		this.dnaScene = new THREE.Scene();
+
+		// background
+		let bgGeometry = new THREE.PlaneBufferGeometry(1000, 1000, 1);
+		let bgMaterial = new THREE.MeshPhongMaterial({
+			color: '#ffffff',
+			specular: '#000000',
+			shininess: 30,
+			side: THREE.FrontSide,
+		});
+
+		let bgMesh = new THREE.Mesh(bgGeometry, bgMaterial);
+
+		bgMesh.position.z = -200
+		this.dnaScene.add(bgMesh);
+
+		// let ambientLight = new THREE.AmbientLight('#ffffff', 0.2);
+		// this.dnaScene.add(ambientLight);
+
+		let pLight = new THREE.PointLight('#bd0009', 1, 0, 2);
+		pLight.distance = 1000;
+		pLight.position.set(100, 100, 250);
+		this.dnaScene.add(pLight);
+
+		let pLight2 = new THREE.PointLight('#0e00b7', 1, 0, 2);
+		pLight2.distance = 1000;
+		pLight2.position.set(-100, -100, 250);
+		this.dnaScene.add(pLight2);
+
+		// pointer
+		let vertices = [];
+		let range = 150;
+		for (let i = 0; i < 500; i++) {
+			let x = Math.floor(Math.random() * (range - (-range))) + (-range);
+			let y = Math.floor(Math.random() * (range - (-range))) + (-range);
+			let z = Math.floor(Math.random() * (range - (-range))) + (-range);
+			vertices.push(x, y, z);
+		}
+		let geometry = new THREE.BufferGeometry();
+		geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+
+		function drawPath(x, y, n, r) {
+			let canvas = document.createElement("canvas");
+			canvas.width = 100;
+			canvas.height = 100;
+			let ctx = canvas.getContext("2d");
+			let i, ang;
+			ang = Math.PI * 2 / n;
+			ctx.save();
+			ctx.fillStyle = 'rgba(255,0,0,.3)'; //填充红色，半透明
+			ctx.strokeStyle = 'hsl(120,50%,50%)'; //填充绿色
+			ctx.lineWidth = 1; //设置线宽
+			ctx.translate(x, y);//原点移到x,y处，即要画的多边形中心
+			ctx.moveTo(0, -r);//据中心r距离处画点
+			ctx.beginPath();
+			for (i = 0; i < n; i++) {
+				ctx.rotate(ang);//旋转
+				ctx.lineTo(0, -r);//据中心r距离处连线
+			}
+			ctx.closePath();
+			ctx.stroke();
+			ctx.fill();
+			ctx.restore();
+			/*3、将canvas作为纹理，创建Sprite*/
+			let texture = new THREE.Texture(canvas);
+			texture.needsUpdate = true;
+			return texture
+		}
+
+		let texture = drawPath(50, 50, 5, 40);
+
+		let material = new THREE.PointsMaterial({
+			size: 100,
+			sizeAttenuation: false,
+			alphaTest: 0.5,
+			map: texture,
+			transparent: true
+		});
+		let points = new THREE.Points(geometry, material);
+		points.name = 'dnaRoundPoints';
+		this.dnaScene.add(points);
+
+
 		let loader = new FBXLoader();
 		loader.load(
 			'./static/model/dna.fbx',
@@ -446,23 +600,6 @@ appClass.prototype = {
 				mesh.name = 'dnaModel';
 				this.dnaModel = mesh;
 				this.dnaScene.add(mesh);
-
-				let vertices = [];
-				for (let i = 0; i < 200; i++) {
-					let x = Math.floor(Math.random() * (115 - (-115))) + (-115);
-					let y = Math.floor(Math.random() * (115 - (-115))) + (-115);
-					let z = Math.floor(Math.random() * (115 - (-115))) + (-115);
-					vertices.push(x, y, z);
-				}
-				let geometry = new THREE.BufferGeometry();
-				geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-				let material = new THREE.PointsMaterial({color: '#71c4ff'});
-				let points = new THREE.Points(geometry, material);
-				points.name = 'dnaRoundPoints';
-				this.dnaScene.add(points);
-
-				let ambientLight = new THREE.AmbientLight('#1ba1ff', 1);
-				this.dnaScene.add(ambientLight);
 			},
 			(xhr) => {
 				console.log((xhr.loaded / xhr.total * 100) + '% loaded');
@@ -472,6 +609,15 @@ appClass.prototype = {
 				console.log(error)
 			}
 		);
+
+		// this.controls = new OrbitControls(this.dnaCamera, this.renderer.domElement);
+		// this.controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
+		// this.controls.dampingFactor = 0.05;
+		// this.controls.screenSpacePanning = false;
+		// this.controls.minDistance = 100;
+		// this.controls.maxDistance = 500;
+		// this.controls.maxPolarAngle = Math.PI;
+
 		this.composerSceneDNA();
 	},
 
@@ -490,70 +636,9 @@ appClass.prototype = {
 		}
 	},
 
-	initDuckScense() {
-		this.seaSceneProcess = {
-			value: 0,
-			position: {
-				x: 0,
-				y: -20,
-				z: 0
-			}
-		};
-		this.seaCamera = new THREE.PerspectiveCamera(this.cameraDefaults.fov, this.aspectRatio, this.cameraDefaults.near, this.cameraDefaults.far);
-		this.seaCamera.aspect = this.aspectRatio;
-		this.seaCamera.position.set(0, 10, 250);
-		this.seaCamera.lookAt(0, 10, 0);
-		this.seaCamera.updateProjectionMatrix();
-
-
-		this.controls = new OrbitControls(this.seaCamera, this.renderer.domElement);
-		this.controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
-		this.controls.dampingFactor = 0.05;
-		this.controls.screenSpacePanning = false;
-		this.controls.minDistance = 100;
-		this.controls.maxDistance = 500;
-		this.controls.maxPolarAngle = Math.PI;
-
-		this.seaScene = new THREE.Scene();
-		let loader = new FBXLoader();
-		loader.load(
-			'./static/model/jellyfish.fbx',
-			(object) => {
-				let animations = object.animations;
-				this.fishMixer = object.mixer = new THREE.AnimationMixer(object);
-				let actions = [];
-				for (let i = 0; i < animations.length; i++) {
-					actions[i] = this.fishMixer.clipAction(animations[i]);
-				}
-				actions[0].play();
-
-				object.traverse((child) => {
-					if (child.isMesh) {
-						child.castShadow = true;
-						child.receiveShadow = true;
-					}
-				});
-				object.scale.set(0.1, 0.1, 0.1);
-				object.position.set(0, 0, 0);
-				this.seaScene.add(object);
-
-
-				let ambientLight = new THREE.AmbientLight('#07f3ff', 1);
-				this.seaScene.add(ambientLight);
-			},
-			(xhr) => {
-				console.log((xhr.loaded / xhr.total * 100) + '% loaded');
-			},
-			(error) => {
-				console.log('An error happened');
-				console.log(error)
-			}
-		);
-	},
-
 	initTimeLine: function () {
 		this.timeline = {
-			process: 1,
+			process: 0,
 			tl: null
 		};
 		let tl = gsap.timeline({smoothChildTiming: true});
@@ -566,11 +651,15 @@ appClass.prototype = {
 		let step2 = gsap.to(this.personSceneProcess, 2.5, {targetIndex: 1});
 		tl.add(step2, 'personScene+=2.5');
 		// person scene dark
-		let step3 = gsap.to(this.__p_nodepass_contrast, 0.5, {value: 0});
-		tl.add(step3, 'personScene+=3.5');
+		let step3 = gsap.to(this.personSceneProcess.nodepass_contrast, 0.5, {value: 0});
+		tl.add(step3, 'personScene+=3');
 
 		// scene 0 to 1
-		let step4 = gsap.to(this.process, 2, {value: 100});
+		let step4 = gsap.to(this.process, 2, {
+			value: 100,
+			onComplete: () => {
+			}
+		});
 		tl.add(step4, 'personScene+=3');
 
 		tl.addLabel("dnaScene", 3);
@@ -583,8 +672,15 @@ appClass.prototype = {
 		tl.add(step6, 'dnaScene');
 
 		// person scene dark
-		let step7 = gsap.to(this.__d_nodepass_contrast, 1.5, {value: 2});
-		tl.add(step7, 'dnaScene+=0.5');
+		let step7 = gsap.to(this.__d_nodepass_contrast, 2, {value: 2});
+		tl.add(step7, 'dnaScene+=1');
+
+		// person scene dark
+		let step8 = gsap.to(this.__d_nodepass_contrast, 1.5, {value: 0});
+		tl.add(step8, 'dnaScene+=3');
+
+		let step9 = gsap.to(this.dnaSceneProcess.position, 2, {x: 0, y: 100, z: 0});
+		tl.add(step9, 'dnaScene+=3');
 
 		tl.pause();
 
@@ -609,7 +705,7 @@ appClass.prototype = {
 
 		let updateIndex = () => {
 			let process = tl.progress();
-			console.log('滚动进度：' + this.timeline.process + ';' + '真实进度：' + process);
+			console.log('滚动进度：' + this.timeline.process + ';' + '全程进度：' + process + ';' + '目前场景标识：' + this.activeSceneIndex);
 		};
 
 		$(document).bind('mousewheel DOMMouseScroll', function (event) {
@@ -655,7 +751,6 @@ app.initGL();
 app.resizeDisplayGL();
 app.initPersonScense();
 app.initDNAScense();
-app.initDuckScense();
 app.initTimeLine();
 
 render();
