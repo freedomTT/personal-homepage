@@ -1,0 +1,144 @@
+{
+    "asset" : {
+        "generator" : "Khronos glTF Blender I/O v1.2.75",
+        "version" : "2.0"
+    },
+    "scene" : 0,
+    "scenes" : [
+        {
+            "name" : "Scene",
+            "nodes" : [
+                0
+            ]
+        }
+    ],
+    "nodes" : [
+        {
+            "mesh" : 0,
+            "name" : "LeakeStreetTunnel03.001",
+            "rotation" : [
+                0.007574839051812887,
+                0.9999561309814453,
+                0.005505819339305162,
+                -7.866702799219638e-05
+            ],
+            "translation" : [
+                116.95634460449219,
+                0.6217539310455322,
+                1.2639527320861816
+            ]
+        }
+    ],
+    "materials" : [
+        {
+            "alphaMode" : "BLEND",
+            "doubleSided" : true,
+            "emissiveFactor" : [
+                0,
+                0,
+                0
+            ],
+            "name" : "LeakeStreetTunnel02_LeakeStreetTunnel02.001",
+            "pbrMetallicRoughness" : {
+                "baseColorTexture" : {
+                    "index" : 0,
+                    "texCoord" : 0
+                },
+                "metallicFactor" : 0,
+                "roughnessFactor" : 1
+            }
+        }
+    ],
+    "meshes" : [
+        {
+            "name" : "LeakeStreetTunnel03.001",
+            "primitives" : [
+                {
+                    "attributes" : {
+                        "POSITION" : 0,
+                        "NORMAL" : 1,
+                        "TEXCOORD_0" : 2
+                    },
+                    "indices" : 3,
+                    "material" : 0
+                }
+            ]
+        }
+    ],
+    "textures" : [
+        {
+            "source" : 0
+        }
+    ],
+    "images" : [
+        {
+            "mimeType" : "image/png",
+            "name" : "LeakeStreetTunnel02",
+            "uri" : "LeakeStreetTunnel02.png"
+        }
+    ],
+    "accessors" : [
+        {
+            "bufferView" : 0,
+            "componentType" : 5126,
+            "count" : 74613,
+            "max" : [
+                116.61800384521484,
+                6.451051712036133,
+                9.407766342163086
+            ],
+            "min" : [
+                -35.80427169799805,
+                -3.239938974380493,
+                -7.226902008056641
+            ],
+            "type" : "VEC3"
+        },
+        {
+            "bufferView" : 1,
+            "componentType" : 5126,
+            "count" : 74613,
+            "type" : "VEC3"
+        },
+        {
+            "bufferView" : 2,
+            "componentType" : 5126,
+            "count" : 74613,
+            "type" : "VEC2"
+        },
+        {
+            "bufferView" : 3,
+            "componentType" : 5125,
+            "count" : 74613,
+            "type" : "SCALAR"
+        }
+    ],
+    "bufferViews" : [
+        {
+            "buffer" : 0,
+            "byteLength" : 895356,
+            "byteOffset" : 0
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 895356,
+            "byteOffset" : 895356
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 596904,
+            "byteOffset" : 1790712
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 298452,
+            "byteOffset" : 2387616
+        }
+    ],
+    "buffers" : [
+        {
+            "byteLength" : 2686068,
+            "uri" : "street.bin"
+        }
+    ]
+}
