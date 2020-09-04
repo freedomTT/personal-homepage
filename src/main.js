@@ -2,7 +2,7 @@ import './style/main.less'
 import _ from 'lodash';
 import $ from 'jquery';
 import Stats from 'stats-js';
-import {gsap, Power0} from "gsap";
+import {gsap, Power0, Elastic} from "gsap";
 
 import * as THREE from 'three';
 
@@ -310,7 +310,7 @@ appClass.prototype = {
 		// background
 		let bgGeometry = new THREE.SphereGeometry(1000, 50, 50);
 		let bgMaterial = new THREE.MeshPhongMaterial({
-			color: '#0c002c',
+			color: '#080646',
 			shininess: 0,
 			side: THREE.BackSide
 		});
@@ -378,7 +378,7 @@ appClass.prototype = {
 				new THREE.Vector3(90, 50, 80),
 				new THREE.Vector3(150, 72, 47),
 				new THREE.Vector3(163, 100, 34),
-				new THREE.Vector3(188, 12, -6),
+				new THREE.Vector3(188, 40, -6),
 				new THREE.Vector3(176, 46, -187),
 			]);
 			cameraCurve.curveType = 'catmullrom';
@@ -495,7 +495,13 @@ appClass.prototype = {
 				contrast: null,
 				bloomPass: null,
 			},
-			streetLight: null
+			streetLight: null,
+			isInFooter: false,
+			fogColor: {
+				r: 0,
+				g: 0,
+				b: 0
+			}
 		};
 		this.mainScene = new THREE.Scene();
 		this.mainCamera = new THREE.PerspectiveCamera(this.cameraDefaults.fov, this.aspectRatio, this.cameraDefaults.near, this.cameraDefaults.far);
@@ -504,7 +510,8 @@ appClass.prototype = {
 		this.mainCamera.lookAt(0, 10, 0);
 		this.mainCamera.updateProjectionMatrix();
 
-		this.mainScene.fog = new THREE.FogExp2('#000000', 0.00025);
+		// this.mainScene.fog = new THREE.FogExp2('#000000', 0.00025);
+		this.mainScene.fog = new THREE.Fog('#000000', 5, 1000);
 
 		let ambientLight = new THREE.AmbientLight('#ffffff', 0.5);
 		this.mainScene.add(ambientLight);
@@ -519,7 +526,7 @@ appClass.prototype = {
 		});
 		let bgMesh = new THREE.Mesh(bgGeometry, bgMaterial);
 
-		bgMesh.position.z = -190;
+		bgMesh.position.z = -200;
 		this.mainScene.add(bgMesh);
 
 		// mouse light
@@ -536,8 +543,8 @@ appClass.prototype = {
 		// pointer
 		this.dnaRoundPointsGroup = new THREE.Group();
 		let vertices = [];
-		let range = 150;
-		for (let i = 0; i < 100; i++) {
+		let range = 50;
+		for (let i = 0; i < 20; i++) {
 			let x = Math.floor(Math.random() * (range - (-range))) + (-range);
 			let y = Math.floor(Math.random() * (range - (-range))) + (-range);
 			let z = Math.floor(Math.random() * (range - (-range))) + (-range);
@@ -572,9 +579,9 @@ appClass.prototype = {
 			return texture
 		}
 
-		let texture1 = drawPath(50, 50, 6, 40, 'rgba(0,255,33,0.02)');
-		let texture2 = drawPath(50, 50, 6, 40, 'rgba(156,20,19,0.9)');
-		let parameters = [[2, 0.6, texture2], [5, 0.8, texture1], [10, 0.6, texture1], [15, 0.6, texture1], [15, 0.2, texture1]];
+		let texture1 = drawPath(50, 50, 6, 40, 'rgba(74,0,255,0.2)');
+		let texture2 = drawPath(50, 50, 6, 40, 'rgba(255,0,69,0.4)');
+		let parameters = [[2, 0.6, texture2], [2, 0.8, texture1], [3, 0.6, texture1], [8, 0.6, texture1], [10, 0.2, texture1]];
 		for (let i = 0; i < parameters.length; i++) {
 			let size = parameters[i][0];
 			let opacity = parameters[i][1];
@@ -641,14 +648,14 @@ appClass.prototype = {
 					new THREE.Vector3(-50, 40, 3500),
 					new THREE.Vector3(-40, 20, 2000),
 					new THREE.Vector3(0, 10, 1000),
-					new THREE.Vector3(20, 15, 100),
+					new THREE.Vector3(10, 0, 800),
 					new THREE.Vector3(0, 0, 0),
 				]);
 				cameraCurve.curveType = 'catmullrom';
-				cameraCurve.tension = 0.8;
+				cameraCurve.tension = 0.1;
 				let targetCurve = new THREE.CatmullRomCurve3([
 					new THREE.Vector3(0, 50, 0),
-					new THREE.Vector3(0, 0, -250)
+					new THREE.Vector3(0, 0, -200)
 				]);
 				targetCurve.curveType = 'catmullrom';
 
@@ -695,6 +702,147 @@ appClass.prototype = {
 			}
 		);
 
+		/*
+		*
+		* footer
+		*
+		* */
+		{
+
+			let Theme = {
+				primary: 0xFFFFFF,
+				secundary: '#00FFFF',
+				background: '#0055FF',
+				darker: '#5802f0'
+			};
+			let _primitive = new THREE.Group();
+			let _myplane = new THREE.Group();
+			let _particles = new THREE.Group();
+
+			this._primitive = _primitive;
+			this._myplane = _myplane;
+			this._lights = null;
+			this._particles = _particles;
+			this._gridHelper = null;
+			this._ambientLights = null;
+			let z = -250;
+
+			function createGrid() {
+
+				this._gridHelper = new THREE.GridHelper(80, 100, 0x888888, 0x888888);
+				this._gridHelper.position.y = 0.1;
+				this._gridHelper.position.z = -250;
+				this.mainScene.add(this._gridHelper);
+
+				let plane_geo = new THREE.PlaneGeometry(80, 80);
+				let plane_mat = new THREE.MeshLambertMaterial({color: Theme.darker});
+				let plane_mes = new THREE.Mesh(plane_geo, plane_mat);
+				plane_mes.castShadow = false;
+				plane_mes.receiveShadow = true;
+				plane_mes.rotation.x = -90 * Math.PI / 180;
+				plane_mes.position.y = 0;
+				plane_mes.position.z = z;
+				this.mainScene.add(plane_mes);
+			}
+
+
+			function createLights() {
+				this._ambientLights = new THREE.HemisphereLight(Theme.primary, Theme.background, 0);
+				this._lights = new THREE.SpotLight(Theme.primary, 0, 0);
+				this._lights.castShadow = true;
+				this._lights.shadow.mapSize.width = 8000;
+				this._lights.shadow.mapSize.height = this._lights.shadow.mapSize.width;
+				this._lights.penumbra = 0.8;
+				this._lights.position.set(10, 20, 20 + z);
+				this.mainScene.add(this._lights);
+				this.mainScene.add(this._ambientLights);
+			}
+
+			function mathRandom(num = 10) {
+				let numValue = -Math.random() * num + Math.random() * num;
+				return numValue;
+			};
+
+			function createPrimitive() {
+				let mesh_mat = new THREE.MeshPhysicalMaterial({color: Theme.darker, flatShading: true});
+				let mesh_wat = new THREE.MeshBasicMaterial({color: Theme.secundary, wireframe: true});
+				//---
+				for (let i = 0; i <= 30; i++) {
+					let s = Math.abs(2 + mathRandom(3));
+					let t = Math.abs(0.9 + mathRandom(0));
+					let mesh_geo = new THREE.CubeGeometry(t, s, t);
+					let mesh_pri = new THREE.Mesh(mesh_geo, mesh_mat);
+					let mesh_wir = new THREE.Mesh(mesh_geo, mesh_wat);
+					mesh_pri.castShadow = true;
+					mesh_pri.receiveShadow = true;
+					mesh_pri.position.y = s - (mesh_pri.geometry.parameters.height / 2);
+					mesh_pri.add(mesh_wir);
+					_primitive.add(mesh_pri);
+				}
+				_primitive.position.y = 0;
+				_primitive.position.z = z;
+				this.mainScene.add(_primitive);
+			}
+
+			function createNave() {
+				let mesh_mat = new THREE.MeshPhongMaterial({
+					color: Theme.background,
+					side: THREE.DoubleSide,
+					flatShading: true
+				});
+				let mesh_geo = new THREE.CubeGeometry(0.5, 0.5, 0.5);
+				let mesh_pri = new THREE.Mesh(mesh_geo, mesh_mat);
+				mesh_pri.castShadow = true;
+				mesh_pri.receiveShadow = true;
+
+				let plan_geo = new THREE.OctahedronGeometry(0.43, 1);
+				let plan_mat = new THREE.MeshPhongMaterial({
+					color: Theme.background,
+					side: THREE.DoubleSide,
+					flatShading: true
+				});
+				let plan_mes = new THREE.Mesh(plan_geo, plan_mat);
+				plan_mes.castShadow = true;
+				plan_mes.receiveShadow = true;
+				let part_geo = new THREE.OctahedronGeometry(0.05, 1);
+				let part_mes = new THREE.Mesh(part_geo, plan_mat);
+
+				part_mes.castShadow = true;
+				part_mes.receiveShadow = true;
+
+				plan_mes.scale.set(0, 0, 0);
+				mesh_pri.scale.set(0, 0, 0);
+
+				gsap.to(plan_mes.scale, 1, {x: 1, y: 1, z: 1, repeat: -1, yoyo: true, ease: Elastic.easeInOut});
+				gsap.to(mesh_pri.scale, 1, {x: 1, y: 1, z: 1, repeat: -1, yoyo: true, delay: 1, ease: Elastic.easeInOut});
+
+				_myplane.add(plan_mes);
+				_myplane.add(mesh_pri);
+				_myplane.position.z = 0.5 + z;
+				this.mainScene.add(_myplane);
+			}
+
+			function createParticles() {
+				let s = 0.01;
+				let part_mat = new THREE.MeshNormalMaterial();
+				let part_geo = new THREE.CubeGeometry(s, s, s);
+
+				for (let i = 0; i < 50; i++) {
+					let p = 20;
+					let part_mes = new THREE.Mesh(part_geo, part_mat);
+					part_mes.vel = mathRandom() / 10;
+					part_mes.amp = mathRandom();
+					part_mes.position.set(mathRandom(p), mathRandom(p), mathRandom(p) + z);
+					_particles.add(part_mes);
+				}
+			}
+
+			createLights.apply(this);
+			createGrid.apply(this);
+			createPrimitive.apply(this);
+			createNave.apply(this);
+			createParticles.apply(this);
+		}
 		this.composerSceneMain();
 	},
 
@@ -708,7 +856,7 @@ appClass.prototype = {
 			});
 		}
 		// 相机动画
-		if (this.streetCameraPoints) {
+		if (this.streetCameraPoints && !this.mainSceneProcess.isInFooter) {
 			let cameraPoints = this.streetCameraPoints;
 			let sceneCameraPoint = cameraPoints.cameraCurve.getPointAt(this.mainSceneProcess && this.mainSceneProcess.value ? this.mainSceneProcess.value : 0);
 			let sceneCameraTargetPoint = cameraPoints.targetCurve.getPointAt(this.mainSceneProcess && this.mainSceneProcess.value ? this.mainSceneProcess.value : 0);
@@ -725,10 +873,53 @@ appClass.prototype = {
 			let cos = (x1 * x2 + y1 * y2) / (Math.sqrt((x1 * x1 + y1 * y1)) * Math.sqrt((x2 * x2 + y2 * y2)));
 			let x = 2 * Math.PI + Math.acos(cos);
 			this.streetCharacter.rotation.y = ((x2 - x1 < 0 ? -1 : 1) * Math.PI / 180 * x);
-			this.streetCharacter.position.set(point.x, point.y - 30, point.z - (100 + 110 * this.mainSceneProcess.value));
+			this.streetCharacter.position.set(point.x, point.y - 30, point.z - (100 + 118 * this.mainSceneProcess.value));
 		}
 		if (this.personMixer2 && this.mainSceneProcess.characterAnimateRun) {
 			this.personMixer2.update(delta);
+		}
+
+
+		if (this.mainSceneProcess.isInFooter) {
+			let _particles = this._particles;
+			let _primitive = this._primitive;
+			let _myplane = this._myplane;
+
+			function mathRandom(num = 10) {
+				let numValue = -Math.random() * num + Math.random() * num;
+				return numValue;
+			};
+			let a = 20;
+			let v = 0.1;
+			let time = Date.now() * 0.003;
+			for (let i = 0, l = _primitive.children.length; i < l; i++) {
+				let object = _primitive.children[i];
+				object.position.z += v;
+				if (object.position.z > 10) {
+					object.position.z = -20 + Math.round(mathRandom());
+					object.position.x = Math.round(mathRandom());
+				}
+			}
+			_particles.rotation.x += v / 5;
+			//---
+			for (let i = 0, l = _particles.children.length; i < l; i++) {
+				let object = _particles.children[i];
+				object.position.x = Math.sin(time * object.vel) * object.amp;
+				object.position.y = Math.cos(time * object.vel) * object.amp;
+				object.position.z = Math.tan(time * object.vel) * object.amp;
+			}
+			//---
+			_myplane.position.x = Math.sin(time / 2.3) * (a / 10);
+			_myplane.position.y = (Math.cos(time / 2) * (a / 15)) + 2;
+			_myplane.rotation.z = (Math.sin(time / 2.3) * a) * Math.PI / 180;
+			_myplane.rotation.y = (-Math.cos(time / 2.3) * a) * Math.PI / 180;
+			_myplane.rotation.x += 0.1;
+
+
+			this._gridHelper.position.z += v;
+			if (this._gridHelper.position.z >= -249) this._gridHelper.position.z = -250;
+
+			this.mainCamera.lookAt(_myplane.position);
 		}
 	},
 
@@ -824,7 +1015,6 @@ appClass.prototype = {
 		let brightnessNode = new Nodes.ColorAdjustmentNode(vibranceNode, brightness, Nodes.ColorAdjustmentNode.BRIGHTNESS);
 		let contrastNode = new Nodes.ColorAdjustmentNode(brightnessNode, contrast, Nodes.ColorAdjustmentNode.CONTRAST);
 		nodepass.input = contrastNode;
-		/*todo*/
 		contrast.value = 0;
 		nodepass.needsUpdate = true;
 		this.mainSceneProcess.composer.contrast = contrast;
@@ -833,9 +1023,10 @@ appClass.prototype = {
 		let effectDarkMask = new ShaderPass(DarkMaskShader);
 		effectDarkMask.uniforms['maskColor'].value = new THREE.Color(0x000000);
 		effectDarkMask.uniforms['maskAlpha'].value = 1.0;
-		effectDarkMask.uniforms['markRadius'].value = 0.25;
+		effectDarkMask.uniforms['markRadius'].value = 0.1;
 		effectDarkMask.uniforms['smoothSize'].value = 0.6;
 		this.bloomComposerSceneMain.addPass(effectDarkMask);
+		this.mainSceneProcess.composer.effectDarkMaskPass = effectDarkMask;
 
 		// filmPass
 		const filmPass = new FilmPass(
@@ -860,13 +1051,14 @@ appClass.prototype = {
 		let tl = gsap.timeline({smoothChildTiming: true});
 		this.timeline.tl = tl;
 		tl.addLabel("personScene", 0);
+
 		// camera move
-		let step1 = gsap.to(this.personSceneProcess, 5, {
+		tl.add(gsap.to(this.personSceneProcess, 5, {
 			value: 1
-		});
-		tl.add(step1, 'personScene');
+		}), 'personScene');
+
 		// camera target move
-		let step2 = gsap.to(this.personSceneProcess, 2.5, {
+		tl.add(gsap.to(this.personSceneProcess, 2.5, {
 			targetIndex: 1,
 			onStart: () => {
 				this.personSceneProcess.isShake = false;
@@ -874,11 +1066,10 @@ appClass.prototype = {
 			onReverseComplete: () => {
 				this.personSceneProcess.isShake = true;
 			},
-		});
-		tl.add(step2, 'personScene+=2.5');
+		}), 'personScene+=2.5');
+
 		// person scene dark
-		let step3 = gsap.to(this.personSceneProcess.nodepass_contrast, 1, {value: 0});
-		tl.add(step3, 'personScene+=3');
+		tl.add(gsap.to(this.personSceneProcess.nodepass_contrast, 1, {value: 0}), 'personScene+=3');
 
 		tl.add(gsap.to('.s1-text1', 2, {
 			translateY: -100,
@@ -886,15 +1077,14 @@ appClass.prototype = {
 		}), 'personScene');
 
 		// scene 0 to 1
-		let step4 = gsap.to(this.process, 5, {
+		tl.add(gsap.to(this.process, 1, {
 			value: 100
-		});
-		tl.add(step4, 'personScene+=4');
+		}), 'personScene+=4');
 
 		tl.addLabel("mainScene", 'personScene+=4');
 
 		// scene 1 in
-		let step5 = gsap.to(this.mainSceneProcess, 10, {
+		tl.add(gsap.to(this.mainSceneProcess, 10, {
 			value: 1,
 			onUpdate: function () {
 				app.mainSceneProcess.characterAnimateRun = true;
@@ -903,47 +1093,80 @@ appClass.prototype = {
 					app.mainSceneProcess.characterAnimateRun = false;
 				}, 100)
 			}
-		});
-		tl.add(step5, 'mainScene');
+		}), 'mainScene');
 
 		// scene 1 in
-		let step6 = gsap.to(this.mainSceneProcess.position, 2, {x: 0, y: 0, z: -10});
-		tl.add(step6, 'mainScene');
-
 		tl.add(gsap.to(this.mainSceneProcess.streetPosition, 2, {y: 0}), 'mainScene');
 
 		// person scene dark
-		let step7 = gsap.to(this.mainSceneProcess.composer.contrast, 3, {value: 1});
-		tl.add(step7, 'mainScene+=0.2');
+		tl.add(gsap.to(this.mainSceneProcess.composer.contrast, 3, {value: 1}), 'mainScene+=0.2');
 
-		let step8 = gsap.to(this.mainSceneProcess.composer.bloomPass, 7, {
+		tl.add(gsap.to(this.mainSceneProcess.composer.bloomPass, 4, {
 			strength: 1
-		});
-		tl.add(step8, 'mainScene');
+		}), 'mainScene+=3');
 
-		let step9 = gsap.to(this.mainSceneProcess.composer.bloomPass, 1, {
+		tl.add(gsap.to(this.mainSceneProcess.composer.bloomPass, 2, {
 			strength: 0.2,
-		});
-		tl.add(step9, 'mainScene+=9');
+		}), 'mainScene+=9');
 
 		tl.add(gsap.to(app.mainSceneProcess.streetLight, 0.5, {
 			distance: 0,
 			intensity: 0,
-			decay: 0
-        onComplete:()=>{
-			    $('.s3-works').css('display','block');
-        }
+			decay: 0,
+			onComplete: () => {
+				$('.s3-works').css('display', 'block');
+				$('.s3-work').css('transform', 'translate(0%, 300%)');
+			},
+			onReverseComplete: () => {
+				$('.s3-works').css('display', 'none');
+			}
 		}), 'mainScene+=8.5');
 
+
 		tl.addLabel("textScene", 'mainScene+=9');
+		tl.add(gsap.to(this.mainSceneProcess.composer.effectDarkMaskPass.uniforms.markRadius, 1, {value: 1}), 'textScene-=1');
+		tl.add(gsap.to(this.mainSceneProcess.position, 1, {x: 0, y: 0, z: -50}), 'textScene-=1');
 		tl.add(gsap.fromTo('.work-1', 1, {opacity: 0, yPercent: 300}, {opacity: 1, yPercent: 150}), 'textScene+=0');
 		tl.add(gsap.fromTo('.work-1', 4, {opacity: 1, yPercent: 150}, {opacity: 0, yPercent: 0}), 'textScene+=1');
 		tl.add(gsap.fromTo('.work-2', 1, {opacity: 0, yPercent: 300}, {opacity: 1, yPercent: 150}), 'textScene+=2.5');
 		tl.add(gsap.fromTo('.work-2', 4, {opacity: 1, yPercent: 150}, {opacity: 0, yPercent: 0}), 'textScene+=3.5');
 		tl.add(gsap.fromTo('.work-3', 1, {opacity: 0, yPercent: 300}, {opacity: 1, yPercent: 150}), 'textScene+=4.5');
-		tl.add(gsap.fromTo('.work-3', 4, {opacity: 1, yPercent: 150}, {opacity: 0, yPercent: 0}), 'textScene+=5.5');
+		tl.add(gsap.fromTo('.work-3', 4, {opacity: 1, yPercent: 150}, {
+			opacity: 0, yPercent: 0,
+		}), 'textScene+=5.5');
 
-		tl.pause();
+		tl.addLabel("footerScene", 'textScene+=9');
+
+		tl.add(gsap.to(this._ambientLights, 0.5, {
+			intensity: 2,
+		}), 'footerScene');
+
+		tl.add(gsap.to(this._lights, 0.5, {
+			intensity: 2,
+			distance: 200,
+		}), 'footerScene');
+
+		tl.add(gsap.to(this.mainCamera.position, 0.5, {
+			x: 7, y: 5, z: -243,
+			onStart: () => {
+				this.mainSceneProcess.isInFooter = true;
+			},
+			onReverseComplete: () => {
+				this.mainSceneProcess.isInFooter = false;
+				this.mainCamera.position.set(new THREE.Vector3(0, 0, 0));
+			}
+		}), 'footerScene');
+
+		tl.add(gsap.fromTo(this.mainScene.fog, 0.5, {far: 4000, near: 20}, {far: 20, near: 5}), 'footerScene');
+
+		tl.add(gsap.to(this.mainSceneProcess.fogColor, 0.5, {
+			r: 0, g: 0, b: 0,
+			onUpdate: () => {
+				let c = this.mainSceneProcess.fogColor;
+				this.mainScene.fog.color = new THREE.Color('rgb(' + parseInt(c.r) + ',' + parseInt(c.g) + ',' + parseInt(c.b) + ')');
+				this.mainScene.background = new THREE.Color('rgb(' + parseInt(c.r) + ',' + parseInt(c.g) + ',' + parseInt(c.b) + ')');
+			}
+		}), 'footerScene');
 
 		this.scrolling = false;
 		let upScroll = () => {
