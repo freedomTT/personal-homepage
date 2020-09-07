@@ -11,13 +11,38 @@
 </head>
 <body>
 <canvas id="canvas" style="position:absolute;width: 100%;height: 100%;"></canvas>
-<div class="s1-text1">
-    I need someone to show me the way when I was wandering,
-    <br>
-    but no one
+<div id="menu-icon-wrapper" class="menu-icon-wrapper" style="visibility: hidden">
+    <svg width="1000px" height="1000px">
+        <path id="pathA" d="M 300 400 L 700 400 C 900 400 900 750 600 850 A 400 400 0 0 1 200 200 L 800 800"></path>
+        <path id="pathB" d="M 300 500 L 700 500"></path>
+        <path id="pathC" d="M 700 600 L 300 600 C 100 600 100 200 400 150 A 400 380 0 1 1 200 800 L 800 200"></path>
+    </svg>
+    <button id="menu-icon-trigger" class="menu-icon-trigger"></button>
 </div>
-<div class="s1-text2">
-    所以只能不停跑
+<nav>
+    <div class="nav-triangle">
+        &blacktriangleright;
+    </div>
+    <ul>
+        <li><a href="javascript:void(0)" data-target="home">Home</a></li>
+        <li><a href="javascript:void(0)" data-target="work">Works</a></li>
+        <li><a href="javascript:void(0)" data-target="about">Aboot</a></li>
+        <li><a href="javascript:void(0)" data-target="blog">Blog</a></li>
+    </ul>
+</nav>
+
+<div class="s1-text s1-text1">
+    <p>Life the most heavy burden is not working, but boring.</p>
+    <p class="s1-text1-author">——Romain Rolland</p>
+</div>
+<div class="s1-text s1-text2">
+    I really want to find some happiness in this chaotic world.
+</div>
+<div class="s1-text s2-text1">
+    Traveling lights illuminate the rush of a city. Everyone is in the past and seems to be looking around.
+</div>
+<div class="s1-text s2-text2">
+    I walk through the sunset, but the sun still disappears in front of me
 </div>
 <div class="s3-works">
     <div class="s3-work work-1">
@@ -27,14 +52,43 @@
     </div>
     <div class="s3-work work-2">
         <div class="works-img" style="background-image: url('./static/images/textures.png')"></div>
-        <p class="works-name">product one</p>
+        <p class="works-name">product two</p>
         <p class="works-desc">some discription</p>
     </div>
     <div class="s3-work work-3">
         <div class="works-img" style="background-image: url('./static/images/textures.png')"></div>
-        <p class="works-name">product one</p>
+        <p class="works-name">product three</p>
         <p class="works-desc">some discription</p>
     </div>
 </div>
+<div class="about">
+    <h2>关于</h2>
+    <div class="content">
+        我想成为一名有秀的网页制作者，这是我的个人主页。
+        <hr>
+        2015年开始从事此项工作，参与制作过大多数类型的web应用，积累了一些经验。能力和资源不足，但是希望能够给社会创造有积极影响的价值。
+        <hr>
+        <table>
+            <tr>
+                <td>qq：</td>
+                <td>768851314</td>
+            </tr>
+            <tr>
+                <td>wechat：</td>
+                <td>tuosFree</td>
+            </tr>
+            <tr>
+                <td>blog：</td>
+                <td>blog.luozhongdao.com</td>
+            </tr>
+            <tr>
+                <td>mail：</td>
+                <td>768851314@qq.com</td>
+            </tr>
+        </table>
+    </div>
+</div>
 </body>
+<script src="static/lib/AnimatedMenuIcon/segment.min.js"></script>
+<script src="static/lib/AnimatedMenuIcon/ease.min.js"></script>
 </html>

@@ -43,22 +43,131 @@ html {
 
 @font-face {
   font-family: 'Bend-One';
-  src: url('../../static/font/Bend-One.otf');
+  src: url('../../static/font/big_foot.ttf');
   font-weight: normal;
   font-style: normal;
 }
 
-.s1-text1 {
+#menu-icon-wrapper {
+  position: absolute;
+  right: 0 !important;
+  top: 0;
+  z-index: 10000000;
+  transform: translateY(-100px);
+  transition: transform 1s;
+
+
+}
+
+nav {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  height: 120px;
+  width: 80px;
+  transform: translateY(-100px);
+  z-index: 100000;
+
+  li {
+    line-height: 30px;
+    font-size: 0.6rem;
+    text-align: center;
+
+    a {
+      text-decoration: none;
+      color: #ffffff;
+      font-weight: lighter;
+    }
+  }
+
+  .nav-triangle {
+    position: absolute;
+    left: -5px;
+    top: 0;
+  }
+}
+
+@media screen and (max-width: 950px) {
+  #menu-icon-wrapper {
+    transform: translateY(0);
+  }
+
+  nav {
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    transform: translateY(-100%);
+    overflow: hidden;
+    transition: transform .3s;
+
+    .nav-triangle {
+      visibility: hidden;
+    }
+
+    ul {
+      position: absolute;
+      width: 100px;
+      height: 300px;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      right: 0;
+      margin: auto;
+
+      li {
+        line-height: 50px;
+        font-size: 1rem;
+        text-align: center;
+
+        a {
+          text-decoration: none;
+          color: #ffffff;
+          font-weight: lighter;
+        }
+      }
+    }
+
+  }
+}
+
+.s1-text {
   position: absolute;
   padding: 20px;
   text-align: center;
-  width: 100%;
-  color: #fff;
-  top: 50%;
-  margin-top: -50px;
+  width: 1150px;
+  height: 200px;
+  max-width: 90%;
+  color: rgb(197, 200, 228);
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  margin: auto;
   font-family: "Bend-One", sans-serif;
-  font-size: 1.8rem;
+  font-size: 2rem;
   box-sizing: border-box;
+  opacity: 0;
+  text-shadow: 0 0 4px rgba(36, 36, 36, 0.79);
+  line-height: 2.5rem;
+}
+
+.s1-text1 {
+  opacity: 1;
+
+  .s1-text1-author {
+    text-align: right;
+    font-size: 0.8rem;
+    margin-top: 0.5rem
+  }
+}
+
+.s1-text2 {
+  height: 150px;
+}
+
+.s2-text1 {
 }
 
 .s3-works {
@@ -85,6 +194,9 @@ html {
       background-size: cover;
       background-color: #000000;
       margin-bottom: 20px;
+      border-radius: 50px;
+      overflow: hidden;
+      box-shadow: 10px 10px 20px #000000;
     }
 
     .works-name {
@@ -104,6 +216,25 @@ html {
       opacity: 1 !important;
     }
   }
+}
 
+.about {
+  position: relative;
+  padding: 50px;
+  width: 100%;
+  height: 100%;
+  margin: 0 auto;
+  left: 0;
+  top: 0;
+  color: #c3c3c3;
+  opacity: 0;
+  box-sizing: border-box;
 
+  .content {
+    font-size: 0.5rem;
+    margin-top: 1rem;
+    width: 500px;
+    max-width: 90%;
+    line-height: 0.8rem;
+  }
 }
