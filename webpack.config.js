@@ -56,10 +56,11 @@ let config = {
 				test: /\.js$/,
 				exclude: /node_modules/,
 				loader: 'eslint-loader',
-          options: {
-              fix: true,
-              formatter: 'stylish',
-          },
+				options: {
+					cache: true,
+					fix: true,
+					formatter: 'stylish',
+				},
 			},
 			{
 				test: /\.js$/,
@@ -70,7 +71,7 @@ let config = {
 	},
 	plugins: [
 		new HtmlWebpackPlugin({
-			template: 'index.ejs',
+			template: 'index.html',
 			inject: true
 		}),
 		new CopyWebpackPlugin({

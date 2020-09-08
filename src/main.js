@@ -1,5 +1,4 @@
 import "./style/main.less";
-import _ from "lodash";
 import $ from "jquery";
 import {gsap, Power0, Elastic} from "gsap";
 import * as THREE from "three";
@@ -98,11 +97,90 @@ const appClass = function (elementToBindTo) {
   };
 
   this.controls = null;
+  this.isLoading = true;
 };
 
 appClass.prototype = {
 
   constructor: appClass,
+
+  loadModels: function () {
+    let app = this;
+
+    app.isLoading = true;
+
+    function model1(chain) {
+      // load human model
+      let loader = new FBXLoader();
+      loader.load(
+        "./static/model/fastrun2.fbx",
+        (model) => {
+          app.model1 = model;
+          chain.next();
+        },
+        (xhr) => {
+          setProcess(parseInt((xhr.loaded / xhr.total) * 33));
+        },
+        (error) => {
+          console.log("An error happened");
+        }
+      );
+    }
+
+    function model2(chain) {
+      // 加载 glTF 格式的模型
+      let loader = new GLTFLoader();/*实例化加载器*/
+      loader.load("./static/model/street.gltf", (obj) => {
+        app.model2 = obj;
+        chain.next();
+      }, function (xhr) {
+        setProcess(parseInt((xhr.loaded / xhr.total) * 33) + 34);
+      }, function (error) {
+        console.log("load error!" + error);
+      });
+    }
+
+    function model3(chain) {
+      // 加载 人物 模型
+      let loader = new FBXLoader();
+      loader.load(
+        "./static/model/walk2.fbx",
+        (model) => {
+          app.model3 = model;
+          chain.next();
+        },
+        (xhr) => {
+          setProcess(parseInt((xhr.loaded / xhr.total) * 33) + 67);
+        },
+        (error) => {
+          console.log("An error happened");
+        }
+      );
+    }
+
+    function setProcess(num) {
+      $(".loading-rect").text(num + "%");
+    }
+
+    let chain;
+
+    function* loadAllModels() {
+      yield model1(chain);
+      yield model2(chain);
+      yield model3(chain);
+      app.initPersonScense();
+      app.initMainScence();
+      app.initTimeLine();
+      app.isLoading = false;
+      setTimeout(() => {
+        $(".loading-ctn").fadeOut(3000);
+      }, 1500);
+    }
+
+    chain = loadAllModels();
+
+    chain.next();
+  },
 
   initGL: function () {
     this.activeSceneIndex = 0;
@@ -155,83 +233,86 @@ appClass.prototype = {
   },
 
   render: function () {
-    let delta = this.clock.getDelta();
-    let process = this.process.value;
-    let wH = window.innerHeight;
-    let wW = window.innerWidth;
-    let pH = wH * (process / 100);
-    if (!this.renderer.autoClear) this.renderer.clear();
-    let frountParams = [0, pH, wW, wH];
-    let behindParams = [0, 0, wW, pH];
+    if (!this.isLoading) {
+      let delta = this.clock.getDelta();
+      let process = this.process.value;
+      let wH = window.innerHeight;
+      let wW = window.innerWidth;
+      let pH = wH * (process / 100);
+      if (!this.renderer.autoClear) this.renderer.clear();
+      let frountParams = [0, pH, wW, wH];
+      let behindParams = [0, 0, wW, pH];
 
 
-    this.renderer.setScissor(...frountParams);
+      this.renderer.setScissor(...frountParams);
 
-    switch (this.activeSceneIndex) {
-    case 0:
-      renderPersonScene.call(this);
-      break;
-    case 1:
-      renderMainScene.call(this);
-      break;
-    }
-
-    this.renderer.setScissor(...behindParams);
-
-    switch (this.activeSceneIndex) {
-    case 0:
-      renderMainScene.call(this);
-      break;
-    case 1:
-      break;
-    }
-
-
-    function renderPersonScene() {
-      if (this.bloomComposerScenePerson) {
-        this.bloomComposerScenePerson.render();
-      } else {
-        this.renderer.render(this.personScene, this.personCamera);
+      switch (this.activeSceneIndex) {
+      case 0:
+        renderPersonScene.call(this);
+        break;
+      case 1:
+        renderMainScene.call(this);
+        break;
       }
-      if (this.personScene) {
-        this.scenePersonAnimate(delta);
-      }
-    }
 
-    function renderMainScene() {
-      if (this.bloomComposerSceneMain) {
-        this.bloomComposerSceneMain.render();
-      } else {
-        this.renderer.render(this.mainScene, this.mainCamera);
+      this.renderer.setScissor(...behindParams);
+
+      switch (this.activeSceneIndex) {
+      case 0:
+        renderMainScene.call(this);
+        break;
+      case 1:
+        break;
       }
-      if (this.mainScene) {
-        this.sceneMainAnimate(delta);
-      }
-    }
 
 
-    if (this.controls) {
-      this.controls.update();
-    }
-    // timeline 平滑过度
-    if (!this.scrolling && this.timeline && (this.timeline.process !== this.timeline.tl.progress())) {
-      this.scrolling = true;
-      this.timeline.tl.pause();
-      let realProcess = this.timeline.tl.progress();
-      let needTime = Math.atan(Math.abs(this.timeline.process * 100 - realProcess * 100));
-      let target = {
-        value: realProcess
-      };
-      gsap.to(target, needTime, {
-        ease: Power0.easeNone,
-        value: this.timeline.process,
-        onUpdate: () => {
-          this.timeline.tl.progress(target.value);
-        },
-        onComplete: () => {
-          this.scrolling = false;
+      function renderPersonScene() {
+        if (this.bloomComposerScenePerson) {
+          this.bloomComposerScenePerson.render();
+        } else {
+          this.renderer.render(this.personScene, this.personCamera);
         }
-      });
+        if (this.personScene) {
+          this.scenePersonAnimate(delta);
+        }
+      }
+
+      function renderMainScene() {
+        if (this.bloomComposerSceneMain) {
+          this.bloomComposerSceneMain.render();
+        } else {
+          this.renderer.render(this.mainScene, this.mainCamera);
+        }
+        if (this.mainScene) {
+          this.sceneMainAnimate(delta);
+        }
+      }
+
+
+      if (this.controls) {
+        this.controls.update();
+      }
+
+      // timeline 平滑过度
+      if (!this.scrolling && this.timeline && (this.timeline.process !== this.timeline.tl.progress())) {
+        this.scrolling = true;
+        this.timeline.tl.pause();
+        let realProcess = this.timeline.tl.progress();
+        let needTime = Math.atan(Math.abs(this.timeline.process * 100 - realProcess * 100));
+        let target = {
+          value: realProcess
+        };
+        gsap.to(target, needTime, {
+          ease: Power0.easeNone,
+          value: this.timeline.process,
+          onUpdate: () => {
+            this.timeline.tl.progress(target.value);
+          },
+          onComplete: () => {
+            this.scrolling = false;
+          }
+        });
+      }
     }
   },
 
@@ -304,34 +385,24 @@ appClass.prototype = {
     this.personScene.add(ambientLight);
 
     // load human model
-    let loader = new FBXLoader();
-    loader.load(
-      "./static/model/fastrun2.fbx",
-      (model) => {
-        model.scale.set(0.3, 0.3, 0.3);
-        model.traverse(function (child) {
-          if (child.isMesh) {
-            child.castShadow = true;
-            child.receiveShadow = true;
-          }
-        });
-        let animations = model.animations;
-        this.personMixer = new THREE.AnimationMixer(model);
-        let actions = [];
-        for (let i = 0; i < animations.length; i++) {
-          actions[i] = this.personMixer.clipAction(animations[i]);
+    {
+      let model = this.model1;
+      model.scale.set(0.3, 0.3, 0.3);
+      model.traverse(function (child) {
+        if (child.isMesh) {
+          child.castShadow = true;
+          child.receiveShadow = true;
         }
-        actions[0].play();
-        this.personScene.add(model);
-
-      },
-      (xhr) => {
-        console.log((xhr.loaded / xhr.total * 100) + "% loaded");
-      },
-      (error) => {
-        console.log("An error happened");
+      });
+      let animations = model.animations;
+      this.personMixer = new THREE.AnimationMixer(model);
+      let actions = [];
+      for (let i = 0; i < animations.length; i++) {
+        actions[i] = this.personMixer.clipAction(animations[i]);
       }
-    );
+      actions[0].play();
+      this.personScene.add(model);
+    }
 
     // add floorCircle
     let circleCpGeometry = new THREE.CircleGeometry(0.2, 20);
@@ -603,9 +674,8 @@ appClass.prototype = {
 		* @desc model
 		* */
     // 加载 glTF 格式的模型
-    let loader = new GLTFLoader();/*实例化加载器*/
-
-    loader.load("./static/model/street.gltf", (obj) => {
+    {
+      let obj = this.model2;
       obj.scene.position.x = -80;
       obj.scene.position.y = 0;
       obj.scene.position.z = 3000;
@@ -646,44 +716,30 @@ appClass.prototype = {
       }
 
       this.streetCameraPoints = createScenseCameraPath.apply(this);
-
-    }, function (xhr) {
-      console.log((xhr.loaded / xhr.total * 100) + "% loaded");
-    }, function (error) {
-      console.log("load error!" + error);
-    });
+    }
     // 加载 人物 模型
-    let loader2 = new FBXLoader();
-    loader2.load(
-      "./static/model/walk2.fbx",
-      (model) => {
-        model.scale.set(0.14, 0.14, 0.14);
-        model.traverse(function (child) {
-          if (child.isMesh) {
-            child.castShadow = true;
-            child.receiveShadow = true;
-          }
-        });
-        let animations = model.animations;
-        this.personMixer2 = new THREE.AnimationMixer(model);
-        let actions = [];
-        for (let i = 0; i < animations.length; i++) {
-          actions[i] = this.personMixer2.clipAction(animations[i]);
+    {
+      let model = this.model3;
+      model.scale.set(0.14, 0.14, 0.14);
+      model.traverse(function (child) {
+        if (child.isMesh) {
+          child.castShadow = true;
+          child.receiveShadow = true;
         }
-        actions[0].play();
-
-        model.position.set(-50, -10, 4000);
-        model.rotateY(Math.PI);
-        this.streetCharacter = model;
-        this.mainScene.add(model);
-      },
-      (xhr) => {
-        console.log((xhr.loaded / xhr.total * 100) + "% loaded");
-      },
-      (error) => {
-        console.log("An error happened");
+      });
+      let animations = model.animations;
+      this.personMixer2 = new THREE.AnimationMixer(model);
+      let actions = [];
+      for (let i = 0; i < animations.length; i++) {
+        actions[i] = this.personMixer2.clipAction(animations[i]);
       }
-    );
+      actions[0].play();
+
+      model.position.set(-50, -10, 4000);
+      model.rotateY(Math.PI);
+      this.streetCharacter = model;
+      this.mainScene.add(model);
+    }
 
     /*
 		*
@@ -711,7 +767,6 @@ appClass.prototype = {
       let z = -250;
 
       function createGrid() {
-
         this._gridHelper = new THREE.GridHelper(80, 100, 0x888888, 0x888888);
         this._gridHelper.position.y = 0.1;
         this._gridHelper.position.z = -250;
@@ -1049,7 +1104,7 @@ appClass.prototype = {
         tl.progress(0.98);
         break;
       case "blog":
-        window.open("http://www.luozhongdao.com/");
+        window.open("http://blog.luozhongdao.com/");
         break;
       }
     });
@@ -1342,7 +1397,6 @@ appClass.prototype = {
 
 };
 
-
 window.onload = function () {
   let app = new appClass(document.querySelector("#canvas"));
 
@@ -1357,10 +1411,7 @@ window.onload = function () {
 
   app.initGL();
   app.resizeDisplayGL();
-  app.initPersonScense();
-  app.initMainScence();
-  app.initTimeLine();
-
+  app.loadModels();
   render();
 
   /*移动端按钮*/
