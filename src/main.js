@@ -1138,7 +1138,7 @@ appClass.prototype = {
       maxSpeed: 2, //不必需，触摸反馈的最大速度限制
       value: 0,
       change: function (value) {
-        let v = value * 0.001 + tl.progress();
+        let v = -value * 0.001 + tl.progress();
         console.log("v:" + v + "-----value: " + value);
         if (v < 0) {
           v = 0;
@@ -1398,6 +1398,7 @@ appClass.prototype = {
 };
 
 window.onload = function () {
+  $("body").css("display", "block");
   let app = new appClass(document.querySelector("#canvas"));
 
   let render = function () {
