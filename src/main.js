@@ -1,6 +1,7 @@
 import "./style/main.less";
 import $ from "jquery";
 import {gsap, Power0, Elastic} from "gsap";
+import scrollTrigger from "gsap/dist/ScrollTrigger.js";
 import * as THREE from "three";
 import {GLTFLoader} from "three/examples/jsm/loaders/GLTFLoader.js";
 import {EffectComposer} from "three/examples/jsm/postprocessing/EffectComposer.js";
@@ -294,25 +295,26 @@ appClass.prototype = {
       }
 
       // timeline 平滑过度
-      if (!this.scrolling && this.timeline && (this.timeline.process !== this.timeline.tl.progress())) {
-        this.scrolling = true;
-        this.timeline.tl.pause();
-        let realProcess = this.timeline.tl.progress();
-        let needTime = Math.atan(Math.abs(this.timeline.process * 100 - realProcess * 100));
-        let target = {
-          value: realProcess
-        };
-        gsap.to(target, needTime, {
-          ease: Power0.easeNone,
-          value: this.timeline.process,
-          onUpdate: () => {
-            this.timeline.tl.progress(target.value);
-          },
-          onComplete: () => {
-            this.scrolling = false;
-          }
-        });
-      }
+      // if (!this.scrolling && this.timeline && (this.timeline.process !== this.timeline.tl.progress())) {
+      // this.scrolling = true;
+      // this.timeline.tl.pause();
+      // let realProcess = this.timeline.tl.progress();
+      // let needTime = Math.atan(Math.abs(this.timeline.process * 100 - realProcess * 100));
+      // let target = {
+      //   value: realProcess
+      // };
+      // gsap.to(target, needTime, {
+      //   ease: Power0.easeNone,
+      //   value: this.timeline.process,
+      //   onUpdate: () => {
+      //     this.timeline.tl.progress(target.value);
+      //   },
+      //   onComplete: () => {
+      //     this.scrolling = false;
+      //   }
+      // });
+      // this.timeline.tl.progress(this.timeline.process);
+      // }
     }
   },
 
@@ -1108,9 +1110,23 @@ appClass.prototype = {
         break;
       }
     });
-
+    gsap.registerPlugin(scrollTrigger);
     let tl = gsap.timeline({
       smoothChildTiming: true,
+      scrollTrigger: {
+        trigger: ".container",
+        pin: true,   // pin the trigger element while active
+        start: "top top", // when the top of the trigger hits the top of the viewport
+        end: "+=10000", // end after scrolling 500px beyond the start
+        scrub: 1, // smooth scrubbing, takes 1 second to "catch up" to the scrollbar
+        // snap: {
+        //   snapTo: "labels", // snap to the closest label in the timeline
+        //   duration: {min: 0.2, max: 3}, // the snap animation should be at least 0.2 seconds, but no more than 3 seconds (determined by velocity)
+        //   delay: 0.2, // wait 0.2 seconds from the last scroll event before doing the snapping
+        //   ease: "power1.inOut" // the ease of the snap animation ("power3" by default)
+        // }
+        markers: false
+      },
       onUpdate: () => {
         let progress = tl.progress();
         if (progress >= 0 && progress < 0.6) {
@@ -1123,44 +1139,6 @@ appClass.prototype = {
       }
     });
     this.timeline.tl = tl;
-    let phyTouch = new PhyTouch({
-      touch: "body",//反馈触摸的dom
-      vertical: true,//不必需，默认是true代表监听竖直方向touch
-      target: {y: 0}, //运动的对象
-      property: "y",  //被运动的属性
-      min: 1, //不必需,运动属性的最小值
-      max: 100, //不必需,滚动属性的最大值
-      sensitivity: 1,//不必需,触摸区域的灵敏度，默认值为1，可以为负数
-      factor: 0.1,//不必需,表示触摸位移运动位移与被运动属性映射关系，默认值是1
-      moveFactor: 0.1,//不必需,表示touchmove位移与被运动属性映射关系，默认值是1
-      step: 1,//用于校正到step的整数倍
-      bindSelf: false,
-      maxSpeed: 2, //不必需，触摸反馈的最大速度限制
-      value: 0,
-      change: function (value) {
-        let v = -value * 0.001 + tl.progress();
-        console.log("v:" + v + "-----value: " + value);
-        if (v < 0) {
-          v = 0;
-        } else if (v > 1) {
-          v = 1;
-        }
-        app.timeline.process = v;
-        // tl.progress(v);
-      },
-      touchStart: function (evt, value) {
-      },
-      touchMove: function (evt, value) {
-      },
-      touchEnd: function (evt, value) {
-      },
-      tap: function (evt, value) {
-      },
-      pressMove: function (evt, value) {
-      },
-      animationEnd: function (value) {
-      } //运动结束
-    });
 
     tl.addLabel("personScene", 0);
 
@@ -1319,62 +1297,6 @@ appClass.prototype = {
         this.mainScene.background = new THREE.Color("rgb(" + parseInt(c.r) + "," + parseInt(c.g) + "," + parseInt(c.b) + ")");
       }
     }), "footerScene");
-
-    this.scrolling = false;
-    let upScroll = () => {
-      if (this.timeline.process > 0) {
-        this.timeline.process -= 0.02;
-      } else {
-        this.timeline.process = 0;
-      }
-      updateIndex();
-    };
-
-    let downScroll = () => {
-      if (this.timeline.process < 1) {
-        this.timeline.process += 0.02;
-      } else {
-        this.timeline.process = 1;
-      }
-      updateIndex();
-    };
-
-    let updateIndex = () => {
-      let process = tl.progress();
-      // console.log('滚动进度：' + this.timeline.process + ';' + '全程进度：' + process + ';' + '目前场景标识：' + this.activeSceneIndex);
-    };
-    this.scrollFl = 0;
-    $(document).bind("mousewheel DOMMouseScroll", (event) => {
-      let wheel = event.originalEvent.wheelDelta;
-      let detail = event.originalEvent.detail;
-      if (this.scrollFl !== 0) {
-        return;
-      } else {
-        this.scrollFl = 1;
-        setTimeout(() => {
-          this.scrollFl = 0;
-        }, 100);
-      }
-      if (event.originalEvent.wheelDelta) { //判断浏览器IE,谷歌滚轮事件
-        if (wheel > 0) {
-          // console.log("👆");
-          upScroll();
-        }
-        if (wheel < 0) {
-          // console.log("👇");
-          downScroll();
-        }
-      } else if (event.originalEvent.detail) {  //Firefox滚轮事件
-        if (detail > 0) {
-          // console.log("👇");
-          downScroll();
-        }
-        if (detail < 0) {
-          // console.log("👆");
-          upScroll();
-        }
-      }
-    });
 
     $(document).bind("mousemove", (event) => {
       event.preventDefault();
