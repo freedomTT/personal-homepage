@@ -2,6 +2,7 @@ import "./style/main.less";
 import $ from "jquery";
 import {gsap, Power0, Elastic} from "gsap";
 import scrollTrigger from "gsap/dist/ScrollTrigger.js";
+import ScrollToPlugin from "gsap/dist/ScrollToPlugin.js";
 import * as THREE from "three";
 import {GLTFLoader} from "three/examples/jsm/loaders/GLTFLoader.js";
 import {EffectComposer} from "three/examples/jsm/postprocessing/EffectComposer.js";
@@ -160,7 +161,7 @@ appClass.prototype = {
     }
 
     function setProcess(num) {
-      $(".loading-rect").text(num + "%");
+      $(".loading-process").text(num + "%");
     }
 
     let chain;
@@ -293,28 +294,6 @@ appClass.prototype = {
       if (this.controls) {
         this.controls.update();
       }
-
-      // timeline 平滑过度
-      // if (!this.scrolling && this.timeline && (this.timeline.process !== this.timeline.tl.progress())) {
-      // this.scrolling = true;
-      // this.timeline.tl.pause();
-      // let realProcess = this.timeline.tl.progress();
-      // let needTime = Math.atan(Math.abs(this.timeline.process * 100 - realProcess * 100));
-      // let target = {
-      //   value: realProcess
-      // };
-      // gsap.to(target, needTime, {
-      //   ease: Power0.easeNone,
-      //   value: this.timeline.process,
-      //   onUpdate: () => {
-      //     this.timeline.tl.progress(target.value);
-      //   },
-      //   onComplete: () => {
-      //     this.scrolling = false;
-      //   }
-      // });
-      // this.timeline.tl.progress(this.timeline.process);
-      // }
     }
   },
 
@@ -597,7 +576,6 @@ appClass.prototype = {
     this.mainSceneProcess.streetLight = streetLight;
 
     // pointer
-    this.dnaRoundPointsGroup = new THREE.Group();
     let vertices = [];
     let range = 50;
     for (let i = 0; i < 20; i++) {
@@ -608,61 +586,6 @@ appClass.prototype = {
     }
     let geometry = new THREE.BufferGeometry();
     geometry.setAttribute("position", new THREE.Float32BufferAttribute(vertices, 3));
-
-    function drawPath(x, y, n, r, color) {
-      let canvas = document.createElement("canvas");
-      canvas.width = 100;
-      canvas.height = 100;
-      let ctx = canvas.getContext("2d");
-      let i, ang;
-      ang = Math.PI * 2 / n;
-      ctx.save();
-      ctx.fillStyle = color; //填充红色，半透明
-      ctx.lineWidth = 1; //设置线宽
-      ctx.translate(x, y);//原点移到x,y处，即要画的多边形中心
-      ctx.moveTo(0, -r);//据中心r距离处画点
-      ctx.beginPath();
-      for (i = 0; i < n; i++) {
-        ctx.rotate(ang);//旋转
-        ctx.lineTo(0, -r);//据中心r距离处连线
-      }
-      ctx.closePath();
-      ctx.fill();
-      ctx.restore();
-      /*3、将canvas作为纹理，创建Sprite*/
-      let texture = new THREE.Texture(canvas);
-      texture.needsUpdate = true;
-      return texture;
-    }
-
-    let texture1 = drawPath(50, 50, 6, 40, "rgba(74,0,255,0.2)");
-    let texture2 = drawPath(50, 50, 6, 40, "rgba(255,0,69,0.4)");
-    let parameters = [[2, 0.6, texture2], [2, 0.8, texture1], [3, 0.6, texture1], [8, 0.6, texture1], [10, 0.2, texture1]];
-    for (let i = 0; i < parameters.length; i++) {
-      let size = parameters[i][0];
-      let opacity = parameters[i][1];
-      let texture = parameters[i][2];
-      let materials = [];
-      materials[i] = new THREE.PointsMaterial({
-        blending: THREE.AdditiveBlending,
-        depthTest: false,
-        size: size,
-        sizeAttenuation: true,
-        alphaTest: false,
-        opacity: opacity,
-        map: texture,
-        transparent: true
-      });
-
-      let particles = new THREE.Points(geometry, materials[i]);
-
-      particles.rotation.x = Math.random() * 6;
-      particles.rotation.y = Math.random() * 6;
-      particles.rotation.z = Math.random() * 6;
-
-      this.dnaRoundPointsGroup.add(particles);
-    }
-    this.mainScene.add(this.dnaRoundPointsGroup);
 
     // this.controls = new OrbitControls(this.mainCamera, this.renderer.domElement);
     // this.controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
@@ -887,14 +810,6 @@ appClass.prototype = {
   },
 
   sceneMainAnimate: function (delta) {
-    let dnaRoundPoints = this.dnaRoundPointsGroup.children;
-    if (dnaRoundPoints) {
-      dnaRoundPoints.forEach((item, index) => {
-        let p = this.mainSceneProcess.position;
-        item.position.set(p.x, p.y, p.z);
-        item.rotateY(Math.PI / 360 * 0.05 * (index + 1));
-      });
-    }
     // 相机动画
     if (this.streetCameraPoints && !this.mainSceneProcess.isInFooter) {
       let cameraPoints = this.streetCameraPoints;
@@ -1094,16 +1009,13 @@ appClass.prototype = {
       let type = $(this).data("target");
       switch (type) {
       case "home":
-        app.timeline.process = 0;
-        tl.progress(0);
+        gsap.to(".scrollbar", 2, {scrollTo: 0});
         break;
       case "work":
-        app.timeline.process = 0.6;
-        tl.progress(0.6);
+        gsap.to(".scrollbar", 2, {scrollTo: 6000});
         break;
       case "about":
-        app.timeline.process = 0.98;
-        tl.progress(0.98);
+        gsap.to(".scrollbar", 2, {scrollTo: 10000});
         break;
       case "blog":
         window.open("http://blog.luozhongdao.com/");
@@ -1111,6 +1023,7 @@ appClass.prototype = {
       }
     });
     gsap.registerPlugin(scrollTrigger);
+    gsap.registerPlugin(ScrollToPlugin);
     let tl = gsap.timeline({
       smoothChildTiming: true,
       scrollTrigger: {
@@ -1119,12 +1032,6 @@ appClass.prototype = {
         start: "top top", // when the top of the trigger hits the top of the viewport
         end: "+=10000", // end after scrolling 500px beyond the start
         scrub: 1, // smooth scrubbing, takes 1 second to "catch up" to the scrollbar
-        // snap: {
-        //   snapTo: "labels", // snap to the closest label in the timeline
-        //   duration: {min: 0.2, max: 3}, // the snap animation should be at least 0.2 seconds, but no more than 3 seconds (determined by velocity)
-        //   delay: 0.2, // wait 0.2 seconds from the last scroll event before doing the snapping
-        //   ease: "power1.inOut" // the ease of the snap animation ("power3" by default)
-        // }
         markers: false
       },
       onUpdate: () => {
@@ -1328,8 +1235,13 @@ window.onload = function () {
     app.render();
   };
 
+
+  let resizeTimeout = null;
   window.addEventListener("resize", function () {
-    app.resizeDisplayGL();
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+      app.resizeDisplayGL();
+    }, 300);
   }, false);
 
   app.initGL();

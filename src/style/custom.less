@@ -1,4 +1,5 @@
 html, body {
+  position: absolute;
   width: 100%;
   height: 100%;
   overflow: hidden;
@@ -7,6 +8,32 @@ html, body {
 html {
   font-size: 16px;
   color: #f0f0f0;
+}
+
+body {
+  padding-right: 10px;
+  box-sizing: border-box;
+  background: rgb(34, 34, 34);
+}
+
+.scrollbar::-webkit-scrollbar {
+  /*滚动条整体样式*/
+  width: 10px; /*高宽分别对应横竖滚动条的尺寸*/
+  height: 1px;
+}
+
+.scrollbar::-webkit-scrollbar-thumb {
+  /*滚动条里面小方块*/
+  border-radius: 10px;
+  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
+  background: #535353;
+}
+
+.scrollbar::-webkit-scrollbar-track {
+  /*滚动条里面轨道*/
+  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+  background: rgb(34, 34, 34);
 }
 
 @media screen and (min-width: 375px) {
@@ -43,7 +70,7 @@ html {
 
 @font-face {
   font-family: 'Bend-One';
-  src: url('../../static/font/big_foot.ttf');
+  src: url('../../static/font/GROTESKIA.otf');
   font-weight: normal;
   font-style: normal;
 }
@@ -68,7 +95,7 @@ html {
   position: absolute;
   width: 100%;
   height: 100%;
-  z-index: 10000000000;
+  z-index: 1000000000000;
   background: #000000;
 
   .loading {
@@ -79,24 +106,23 @@ html {
     bottom: 0;
     margin: auto;
     width: 50px;
-    height: 50px;
+    height: 60px;
     -webkit-perspective: 100px;
     float: left;
-    display: -webkit-flex;
-    justify-content: center;
-    display: flex;
-    align-items: center;
 
     .loading-rect {
       width: 50px;
       height: 50px;
-      line-height: 50px;
-      text-align: center;
-      font-size: 0.5rem;
-      border-radius: 10px;
       color: rgba(255, 255, 255, 0.25);
       background: rgba(38, 38, 38, 0.88);
       -webkit-animation: loadingFl 2s ease-in-out infinite;
+    }
+
+    .loading-process {
+      text-align: center;
+      padding-top: 10px;
+      color: #535353;
+      font-size: 0.5rem;
     }
 
     @-webkit-keyframes loadingFl {
@@ -118,17 +144,6 @@ html {
 }
 
 
-#menu-icon-wrapper {
-  position: absolute;
-  right: 0 !important;
-  top: 0;
-  z-index: 10000000;
-  transform: translateY(-100px);
-  transition: transform 1s;
-
-
-}
-
 nav {
   position: absolute;
   top: 50%;
@@ -136,7 +151,8 @@ nav {
   height: 120px;
   width: 80px;
   transform: translateY(-100px);
-  z-index: 100000;
+  z-index: 1000000000;
+  pointer-events: initial;
 
   li {
     line-height: 30px;
@@ -155,6 +171,15 @@ nav {
     left: -5px;
     top: 0;
   }
+}
+
+#menu-icon-wrapper {
+  position: absolute;
+  right: 0 !important;
+  top: 0;
+  transform: translateY(-100px);
+  transition: transform 1s;
+  z-index: 100000000000;
 }
 
 @media screen and (max-width: 950px) {
@@ -238,6 +263,11 @@ nav {
 }
 
 .s2-text1 {
+  color: rgba(255, 255, 255, 0.25);
+}
+
+.s2-text2 {
+  color: rgba(255, 255, 255, 0.35);
 }
 
 .s3-works {
@@ -252,7 +282,7 @@ nav {
     position: absolute;
     opacity: 0;
     max-width: 100%;
-    width: 28rem;
+    width: 35rem;
     z-index: 100;
     top: -25rem;
     transform: translate(0%, 300%);
@@ -260,11 +290,11 @@ nav {
 
     .works-img {
       width: 100%;
-      height: 18rem;
+      height: 25rem;
       background-size: cover;
       background-color: #000000;
       margin-bottom: 20px;
-      border-radius: 50px;
+      border-radius: 10px;
       overflow: hidden;
       box-shadow: 10px 10px 20px #000000;
     }
