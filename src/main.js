@@ -12,6 +12,7 @@ import {NodePass} from "three/examples/jsm/nodes/postprocessing/NodePass.js";
 import * as Nodes from "three/examples/jsm/nodes/Nodes.js";
 import {ShaderPass} from "three/examples/jsm/postprocessing/ShaderPass.js";
 import {FilmPass} from "three/examples/jsm/postprocessing/FilmPass.js";
+import {RGBShiftShader} from "three/examples/jsm/shaders/RGBShiftShader.js";
 import {ShadowMesh} from "three/examples/jsm/objects/ShadowMesh.js";
 import {FBXLoader} from "three/examples/jsm/loaders/FBXLoader.js";
 import {Reflector} from "three/examples/jsm/objects/Reflector.js";
@@ -121,7 +122,7 @@ appClass.prototype = {
           chain.next();
         },
         (xhr) => {
-          setProcess(parseInt((xhr.loaded / xhr.total) * 33));
+          setProcess(parseInt((xhr.loaded / xhr.total) * 25));
         },
         (error) => {
           console.log("An error happened");
@@ -136,7 +137,7 @@ appClass.prototype = {
         app.model2 = obj;
         chain.next();
       }, function (xhr) {
-        setProcess(parseInt((xhr.loaded / xhr.total) * 33) + 34);
+        setProcess(parseInt((xhr.loaded / xhr.total) * 25) + 25);
       }, function (error) {
         console.log("load error!" + error);
       });
@@ -152,12 +153,25 @@ appClass.prototype = {
           chain.next();
         },
         (xhr) => {
-          setProcess(parseInt((xhr.loaded / xhr.total) * 33) + 67);
+          setProcess(parseInt((xhr.loaded / xhr.total) * 25) + 50);
         },
         (error) => {
           console.log("An error happened");
         }
       );
+    }
+
+    function model4(chain) {
+      // 加载 glTF 格式的模型
+      let loader = new GLTFLoader();/*实例化加载器*/
+      loader.load("./static/model/darkperson/scene.gltf", (obj) => {
+        app.model4 = obj.scene;
+        chain.next();
+      }, function (xhr) {
+        setProcess(parseInt((xhr.loaded / xhr.total) * 25) + 75);
+      }, function (error) {
+        console.log("load error!" + error);
+      });
     }
 
     function setProcess(num) {
@@ -170,6 +184,7 @@ appClass.prototype = {
       yield model1(chain);
       yield model2(chain);
       yield model3(chain);
+      yield model4(chain);
       app.initPersonScense();
       app.initMainScence();
       app.initTimeLine();
@@ -545,47 +560,10 @@ appClass.prototype = {
     this.mainCamera.lookAt(0, 10, 0);
     this.mainCamera.updateProjectionMatrix();
 
-    // this.mainScene.fog = new THREE.FogExp2('#000000', 0.00025);
-    this.mainScene.fog = new THREE.Fog("#000000", 5, 1000);
+    this.mainScene.fog = new THREE.Fog("#000000", 5, 500);
 
     let ambientLight = new THREE.AmbientLight("#ffffff", 0.5);
     this.mainScene.add(ambientLight);
-
-    // background
-    let bgGeometry = new THREE.PlaneBufferGeometry(1000, 1000, 10);
-    let bgMaterial = new THREE.MeshPhongMaterial({
-      color: "#000000",
-      specular: "#ffffff",
-      shininess: 2,
-      side: THREE.FrontSide,
-    });
-    let bgMesh = new THREE.Mesh(bgGeometry, bgMaterial);
-
-    bgMesh.position.z = -200;
-    this.mainScene.add(bgMesh);
-
-    // mouse light
-    this.pLight = new THREE.PointLight("#0063ff", 1, 500, 4);
-    this.pLight.position.set(100, 100, -160);
-    this.mainScene.add(this.pLight);
-
-    let streetLight = new THREE.PointLight("#ffffff", 1, 0, 2);
-    streetLight.distance = 5000;
-    streetLight.position.set(0, 0, 0);
-    this.mainScene.add(streetLight);
-    this.mainSceneProcess.streetLight = streetLight;
-
-    // pointer
-    let vertices = [];
-    let range = 50;
-    for (let i = 0; i < 20; i++) {
-      let x = Math.floor(Math.random() * (range - (-range))) + (-range);
-      let y = Math.floor(Math.random() * (range - (-range))) + (-range);
-      let z = Math.floor(Math.random() * (range - (-range))) + (-range);
-      vertices.push(x, y, z);
-    }
-    let geometry = new THREE.BufferGeometry();
-    geometry.setAttribute("position", new THREE.Float32BufferAttribute(vertices, 3));
 
     // this.controls = new OrbitControls(this.mainCamera, this.renderer.domElement);
     // this.controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
@@ -594,6 +572,27 @@ appClass.prototype = {
     // this.controls.minDistance = 100;
     // this.controls.maxDistance = 500;
     // this.controls.maxPolarAngle = Math.PI;
+
+
+    // background
+    let bgGeometry = new THREE.PlaneBufferGeometry(200, 175, 5, 5);
+    let bgMaterial = new THREE.MeshLambertMaterial({
+      color: "#ffffff",
+      side: THREE.DoubleSide,
+      shading: THREE.FlatShading
+    });
+    let bgMesh = new THREE.Mesh(bgGeometry, bgMaterial);
+
+    bgMesh.position.x = -30;
+    bgMesh.position.y = 35;
+    bgMesh.position.z = 0;
+    this.mainScene.add(bgMesh);
+
+    let streetLight = new THREE.PointLight("#ffffff", 1, 0, 2);
+    streetLight.distance = 2000;
+    streetLight.position.set(0, 0, 0);
+    this.mainScene.add(streetLight);
+    this.mainSceneProcess.streetLight = streetLight;
 
     /*
 		* @desc model
@@ -609,8 +608,7 @@ appClass.prototype = {
       obj.scene.rotateX(Math.PI / 180 * (-2));
       obj.scene.traverse(function (child) {
         if (child.isMesh) {
-          child.castShadow = true;
-          child.receiveShadow = true;
+          child.material.wireframe = true;
         }
       });
       this.mainScene.add(obj.scene);
@@ -665,6 +663,42 @@ appClass.prototype = {
       this.streetCharacter = model;
       this.mainScene.add(model);
     }
+    // 加载 模型
+    {
+      let model = this.model4;
+      model.scale.set(0.14, 0.14, 0.14);
+      model.traverse(function (child) {
+        if (child.isMesh) {
+          child.material.transparent = false;
+          child.material.depthWrite = true;
+          child.material.alphaTest = 0.1;
+        }
+      });
+
+      model.position.set(-60, -20, -100);
+      model.rotation.y = Math.PI / 180 * 90;
+      this.mainModel = model;
+      this.mainScene.add(model);
+      let model2 = model.clone();
+      let m = new THREE.Matrix4();
+      let vec = new THREE.Vector3(0, 0, 1);
+
+      m.set(1 - 2 * vec.x * vec.x, -2 * vec.x * vec.y, -2 * vec.x * vec.z, 0,
+        -2 * vec.x * vec.y, 1 - 2 * vec.y * vec.y, -2 * vec.y * vec.z, 0,
+        -2 * vec.x * vec.z, -2 * vec.y * vec.z, 1 - 2 * vec.z * vec.z, 0,
+        0, 0, 0, 1);
+      model2.applyMatrix(m);
+      model2.position.set(60, -20, -100);
+      model2.rotation.y = -Math.PI / 180 * 90;
+      this.mainModel2 = model2;
+      this.mainScene.add(model2);
+
+
+      let pLight = new THREE.PointLight("#ffffff", 1, 0, 2);
+      pLight.distance = 5000;
+      pLight.position.set(0, 0, -5);
+      this.mainScene.add(pLight);
+    }
 
     /*
 		*
@@ -672,139 +706,32 @@ appClass.prototype = {
 		*
 		* */
     {
+      // background
+      let bgGeometry = new THREE.PlaneBufferGeometry(2000, 2000, 100, 100);
+      let bgMaterial = new THREE.MeshBasicMaterial({
+        color: "0x555555",
+        wireframe: true,
+        side: THREE.DoubleSide
+      });
+      let bgMesh = new THREE.Mesh(bgGeometry, bgMaterial);
 
-      let Theme = {
-        primary: 0xFFFFFF,
-        secundary: "#00FFFF",
-        background: "#0055FF",
-        darker: "#5802f0"
-      };
-      let _primitive = new THREE.Group();
-      let _myplane = new THREE.Group();
-      let _particles = new THREE.Group();
+      bgMesh.position.z = -500;
+      this.mainScene.add(bgMesh);
 
-      this._primitive = _primitive;
-      this._myplane = _myplane;
-      this._lights = null;
-      this._particles = _particles;
-      this._gridHelper = null;
-      this._ambientLights = null;
-      let z = -250;
+      let bgMaterial2 = new THREE.MeshLambertMaterial({
+        color: 0x333333,
+        side: THREE.DoubleSide,
+        shading: THREE.FlatShading
+      });
+      let bgMesh2 = new THREE.Mesh(bgGeometry, bgMaterial2);
 
-      function createGrid() {
-        this._gridHelper = new THREE.GridHelper(80, 100, 0x888888, 0x888888);
-        this._gridHelper.position.y = 0.1;
-        this._gridHelper.position.z = -250;
-        this.mainScene.add(this._gridHelper);
+      bgMesh.position.z = -500;
+      bgMesh2.position.z = -500;
+      this.mainScene.add(bgMesh);
+      this.mainScene.add(bgMesh2);
 
-        let plane_geo = new THREE.PlaneGeometry(80, 80);
-        let plane_mat = new THREE.MeshLambertMaterial({color: Theme.darker});
-        let plane_mes = new THREE.Mesh(plane_geo, plane_mat);
-        plane_mes.castShadow = false;
-        plane_mes.receiveShadow = true;
-        plane_mes.rotation.x = -90 * Math.PI / 180;
-        plane_mes.position.y = 0;
-        plane_mes.position.z = z;
-        this.mainScene.add(plane_mes);
-      }
-
-
-      function createLights() {
-        this._ambientLights = new THREE.HemisphereLight(Theme.primary, Theme.background, 0);
-        this._lights = new THREE.SpotLight(Theme.primary, 0, 0);
-        this._lights.castShadow = true;
-        this._lights.shadow.mapSize.width = 8000;
-        this._lights.shadow.mapSize.height = this._lights.shadow.mapSize.width;
-        this._lights.penumbra = 0.8;
-        this._lights.position.set(10, 20, 20 + z);
-        this.mainScene.add(this._lights);
-        this.mainScene.add(this._ambientLights);
-      }
-
-      function mathRandom(num = 10) {
-        let numValue = -Math.random() * num + Math.random() * num;
-        return numValue;
-      };
-
-      function createPrimitive() {
-        let mesh_mat = new THREE.MeshPhysicalMaterial({color: Theme.darker, flatShading: true});
-        let mesh_wat = new THREE.MeshBasicMaterial({color: Theme.secundary, wireframe: true});
-        //---
-        for (let i = 0; i <= 30; i++) {
-          let s = Math.abs(2 + mathRandom(3));
-          let t = Math.abs(0.9 + mathRandom(0));
-          let mesh_geo = new THREE.CubeGeometry(t, s, t);
-          let mesh_pri = new THREE.Mesh(mesh_geo, mesh_mat);
-          let mesh_wir = new THREE.Mesh(mesh_geo, mesh_wat);
-          mesh_pri.castShadow = true;
-          mesh_pri.receiveShadow = true;
-          mesh_pri.position.y = s - (mesh_pri.geometry.parameters.height / 2);
-          mesh_pri.add(mesh_wir);
-          _primitive.add(mesh_pri);
-        }
-        _primitive.position.y = 0;
-        _primitive.position.z = z;
-        this.mainScene.add(_primitive);
-      }
-
-      function createNave() {
-        let mesh_mat = new THREE.MeshPhongMaterial({
-          color: Theme.background,
-          side: THREE.DoubleSide,
-          flatShading: true
-        });
-        let mesh_geo = new THREE.CubeGeometry(0.5, 0.5, 0.5);
-        let mesh_pri = new THREE.Mesh(mesh_geo, mesh_mat);
-        mesh_pri.castShadow = true;
-        mesh_pri.receiveShadow = true;
-
-        let plan_geo = new THREE.OctahedronGeometry(0.43, 1);
-        let plan_mat = new THREE.MeshPhongMaterial({
-          color: Theme.background,
-          side: THREE.DoubleSide,
-          flatShading: true
-        });
-        let plan_mes = new THREE.Mesh(plan_geo, plan_mat);
-        plan_mes.castShadow = true;
-        plan_mes.receiveShadow = true;
-        let part_geo = new THREE.OctahedronGeometry(0.05, 1);
-        let part_mes = new THREE.Mesh(part_geo, plan_mat);
-
-        part_mes.castShadow = true;
-        part_mes.receiveShadow = true;
-
-        plan_mes.scale.set(0, 0, 0);
-        mesh_pri.scale.set(0, 0, 0);
-
-        gsap.to(plan_mes.scale, 1, {x: 1, y: 1, z: 1, repeat: -1, yoyo: true, ease: Elastic.easeInOut});
-        gsap.to(mesh_pri.scale, 1, {x: 1, y: 1, z: 1, repeat: -1, yoyo: true, delay: 1, ease: Elastic.easeInOut});
-
-        _myplane.add(plan_mes);
-        _myplane.add(mesh_pri);
-        _myplane.position.z = 0.5 + z;
-        this.mainScene.add(_myplane);
-      }
-
-      function createParticles() {
-        let s = 0.01;
-        let part_mat = new THREE.MeshNormalMaterial();
-        let part_geo = new THREE.CubeGeometry(s, s, s);
-
-        for (let i = 0; i < 50; i++) {
-          let p = 20;
-          let part_mes = new THREE.Mesh(part_geo, part_mat);
-          part_mes.vel = mathRandom() / 10;
-          part_mes.amp = mathRandom();
-          part_mes.position.set(mathRandom(p), mathRandom(p), mathRandom(p) + z);
-          _particles.add(part_mes);
-        }
-      }
-
-      createLights.apply(this);
-      createGrid.apply(this);
-      createPrimitive.apply(this);
-      createNave.apply(this);
-      createParticles.apply(this);
+      this._ambientLight = new THREE.AmbientLight("#ffffff", 0);
+      this.mainScene.add(this._ambientLight);
     }
     this.composerSceneMain();
   },
@@ -834,47 +761,9 @@ appClass.prototype = {
       this.personMixer2.update(delta);
     }
 
-
-    if (this.mainSceneProcess.isInFooter) {
-      let _particles = this._particles;
-      let _primitive = this._primitive;
-      let _myplane = this._myplane;
-
-      function mathRandom(num = 10) {
-        let numValue = -Math.random() * num + Math.random() * num;
-        return numValue;
-      };
-      let a = 20;
-      let v = 0.1;
-      let time = Date.now() * 0.003;
-      for (let i = 0, l = _primitive.children.length; i < l; i++) {
-        let object = _primitive.children[i];
-        object.position.z += v;
-        if (object.position.z > 10) {
-          object.position.z = -20 + Math.round(mathRandom());
-          object.position.x = Math.round(mathRandom());
-        }
-      }
-      _particles.rotation.x += v / 5;
-      //---
-      for (let i = 0, l = _particles.children.length; i < l; i++) {
-        let object = _particles.children[i];
-        object.position.x = Math.sin(time * object.vel) * object.amp;
-        object.position.y = Math.cos(time * object.vel) * object.amp;
-        object.position.z = Math.tan(time * object.vel) * object.amp;
-      }
-      //---
-      _myplane.position.x = Math.sin(time / 2.3) * (a / 10);
-      _myplane.position.y = (Math.cos(time / 2) * (a / 15)) + 2;
-      _myplane.rotation.z = (Math.sin(time / 2.3) * a) * Math.PI / 180;
-      _myplane.rotation.y = (-Math.cos(time / 2.3) * a) * Math.PI / 180;
-      _myplane.rotation.x += 0.1;
-
-
-      this._gridHelper.position.z += v;
-      if (this._gridHelper.position.z >= -249) this._gridHelper.position.z = -250;
-
-      this.mainCamera.lookAt(_myplane.position);
+    if (this.mainModel) {
+      this.mainModel.rotateY(-Math.PI / 180);
+      this.mainModel2.rotateY(Math.PI / 180);
     }
   },
 
@@ -992,6 +881,13 @@ appClass.prototype = {
     );
     filmPass.renderToScreen = true;
     this.bloomComposerSceneMain.addPass(filmPass);
+
+    // RGBShiftShader
+    let rgbSplit = new ShaderPass(RGBShiftShader);
+    rgbSplit.uniforms["amount"].value = 0.0;
+    rgbSplit.renderToScreen = true;
+    this.bloomComposerSceneMain.addPass(rgbSplit);
+    this.mainSceneProcess.composer.rgbSplit = rgbSplit;
   },
 
   /*
@@ -1149,6 +1045,8 @@ appClass.prototype = {
       }
     }), "mainScene+=8.5");
 
+    tl.add(gsap.to(this.mainSceneProcess.composer.contrast, 1, {value: 0}), "mainScene+=8.5");
+    tl.add(gsap.to(this.mainSceneProcess.composer.contrast, 1, {value: 1}), "mainScene+=10");
 
     tl.addLabel("textScene", "mainScene+=9");
     tl.add(gsap.to(this.mainSceneProcess.composer.effectDarkMaskPass.uniforms.markRadius, 1, {value: 1}), "textScene-=1");
@@ -1178,49 +1076,44 @@ appClass.prototype = {
       intensity: 2,
     }), "footerScene");
 
-    tl.add(gsap.to(this._lights, 0.5, {
-      intensity: 2,
-      distance: 200,
-    }), "footerScene");
-
+    let footerFl = null;
     tl.add(gsap.to(this.mainCamera.position, 0.5, {
-      x: 7, y: 5, z: -243,
+      x: 0, y: 0, z: -243,
       onStart: () => {
         this.mainSceneProcess.isInFooter = true;
+
+        footerFl = setInterval(animeIn, 3000);
+
+        function animeIn() {
+          setTimeout(animeOne, 700);
+        };
+
+        function animeOne() {
+          app.mainSceneProcess.composer.rgbSplit.uniforms["amount"].value = 0.01;
+          setTimeout(animeTwo, 100);
+        }
+
+        function animeTwo() {
+          app.mainSceneProcess.composer.rgbSplit.uniforms["amount"].value = 0.003;
+          setTimeout(animeThree, 100);
+        }
+
+        function animeThree() {
+          app.mainSceneProcess.composer.rgbSplit.uniforms["amount"].value = 0.05;
+          setTimeout(animeOut, 100);
+        }
+
+        function animeOut() {
+          app.mainSceneProcess.composer.rgbSplit.uniforms["amount"].value = 0;
+        };
       },
       onReverseComplete: () => {
+        clearInterval(footerFl);
         this.mainSceneProcess.isInFooter = false;
         this.mainCamera.position.set(new THREE.Vector3(0, 0, 0));
       }
     }), "footerScene");
 
-    tl.add(gsap.fromTo(this.mainScene.fog, 0.5, {far: 4000, near: 20}, {far: 20, near: 5}), "footerScene");
-
-    tl.add(gsap.to(this.mainSceneProcess.fogColor, 0.5, {
-      r: 0, g: 0, b: 0,
-      onUpdate: () => {
-        let c = this.mainSceneProcess.fogColor;
-        this.mainScene.fog.color = new THREE.Color("rgb(" + parseInt(c.r) + "," + parseInt(c.g) + "," + parseInt(c.b) + ")");
-        this.mainScene.background = new THREE.Color("rgb(" + parseInt(c.r) + "," + parseInt(c.g) + "," + parseInt(c.b) + ")");
-      }
-    }), "footerScene");
-
-    $(document).bind("mousemove", (event) => {
-      event.preventDefault();
-      let vec = new THREE.Vector3(); // create once and reuse
-      let pos = new THREE.Vector3(); // create once and reuse
-      vec.set(
-        (event.clientX / window.innerWidth) * 2 - 1,
-        -(event.clientY / window.innerHeight) * 2 + 1,
-        0.5);
-      vec.unproject(this.mainCamera);
-      vec.sub(this.mainCamera.position).normalize();
-      // let distance = -this.mainCamera.position.z / vec.z;
-      let distance = (this.pLight.position.z - this.mainCamera.position.z) / vec.z;
-      pos.copy(this.mainCamera.position).add(vec.multiplyScalar(distance));
-      this.pLight.position.copy(pos);
-    }
-    );
 
   },
 

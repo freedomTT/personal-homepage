@@ -273,6 +273,7 @@ nav {
 .s3-works {
   position: relative;
   width: 90%;
+  max-width: 900px;
   margin: 0 auto;
   font-family: "Bend-One", sans-serif;
   font-size: 1.2rem;
@@ -282,11 +283,11 @@ nav {
     position: absolute;
     opacity: 0;
     max-width: 100%;
-    width: 35rem;
+    width: 100%;
     z-index: 100;
     top: -25rem;
     transform: translate(0%, 300%);
-    transition: opacity .3s;
+    //transition: opacity .3s;
 
     .works-img {
       width: 100%;
@@ -309,7 +310,7 @@ nav {
     }
 
     &:nth-child(2n) {
-      right: 0;
+      //right: 0;
     }
 
     &:hover {
@@ -326,9 +327,12 @@ nav {
   margin: 0 auto;
   left: 0;
   top: 0;
-  color: #c3c3c3;
+  color: rgba(195, 195, 195, 0.53);
   opacity: 0;
   box-sizing: border-box;
+  z-index: 1000;
+  pointer-events: initial;
+  font-weight: 400;
 
   .content {
     font-size: 0.5rem;
@@ -336,6 +340,10 @@ nav {
     width: 500px;
     max-width: 90%;
     line-height: 0.8rem;
+  }
+
+  a {
+    color: rgba(195, 195, 195, 0.53);
   }
 }
 

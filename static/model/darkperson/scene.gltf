@@ -1,0 +1,454 @@
+{
+  "accessors": [
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 976,
+      "max": [
+        110.11965179443359,
+        80.079696655273438,
+        114.34755706787109
+      ],
+      "min": [
+        -51.436756134033203,
+        -24.237226486206055,
+        -181.17214965820312
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 11712,
+      "componentType": 5126,
+      "count": 976,
+      "max": [
+        0.99470019340515137,
+        0.99964934587478638,
+        0.9876667857170105
+      ],
+      "min": [
+        -0.99918884038925171,
+        -0.99994504451751709,
+        -0.99439734220504761
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5126,
+      "count": 976,
+      "max": [
+        0.99881839752197266,
+        0.99846434593200684,
+        0.98954004049301147,
+        1
+      ],
+      "min": [
+        -0.99971997737884521,
+        -0.99708229303359985,
+        -0.99929392337799072,
+        -1
+      ],
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 976,
+      "max": [
+        0.98732006549835205,
+        0.74773043394088745
+      ],
+      "min": [
+        0.010407473891973495,
+        0.0094761867076158524
+      ],
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 0,
+      "componentType": 5125,
+      "count": 4509,
+      "max": [
+        975
+      ],
+      "min": [
+        0
+      ],
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 23424,
+      "componentType": 5126,
+      "count": 744,
+      "max": [
+        175.60000610351562,
+        114.38369750976562,
+        41.644355773925781
+      ],
+      "min": [
+        -126.39820098876953,
+        -127.87705230712891,
+        -94.089706420898438
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 32352,
+      "componentType": 5126,
+      "count": 744,
+      "max": [
+        0.99570190906524658,
+        0.99090206623077393,
+        1
+      ],
+      "min": [
+        -0.96193522214889526,
+        -0.98897659778594971,
+        -0.99707293510437012
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 3,
+      "byteOffset": 15616,
+      "componentType": 5126,
+      "count": 744,
+      "max": [
+        1,
+        0.99443191289901733,
+        0.96988445520401001,
+        1
+      ],
+      "min": [
+        -0.99918293952941895,
+        -0.98671990633010864,
+        -0.95681023597717285,
+        1
+      ],
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 7808,
+      "componentType": 5126,
+      "count": 744,
+      "max": [
+        0.62094533443450928,
+        0.59011995792388916
+      ],
+      "min": [
+        0.55232870578765869,
+        0.48719498515129089
+      ],
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 0,
+      "byteOffset": 18036,
+      "componentType": 5125,
+      "count": 1116,
+      "max": [
+        743
+      ],
+      "min": [
+        0
+      ],
+      "type": "SCALAR"
+    }
+  ],
+  "asset": {
+    "extras": {
+      "author": "Adrian H. (https://sketchfab.com/addddy)",
+      "license": "CC-BY-NC-4.0 (http://creativecommons.org/licenses/by-nc/4.0/)",
+      "source": "https://sketchfab.com/models/0052b71131614bddba4caac26c9998bf",
+      "title": "Dark Pilgrim - Statue"
+    },
+    "generator": "Sketchfab-3.19.6",
+    "version": "2.0"
+  },
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteLength": 22500,
+      "byteOffset": 0,
+      "name": "floatBufferViews",
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteLength": 13760,
+      "byteOffset": 22500,
+      "byteStride": 8,
+      "name": "floatBufferViews",
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 41280,
+      "byteOffset": 36260,
+      "byteStride": 12,
+      "name": "floatBufferViews",
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 27520,
+      "byteOffset": 77540,
+      "byteStride": 16,
+      "name": "floatBufferViews",
+      "target": 34962
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 105060,
+      "uri": "scene.bin"
+    }
+  ],
+  "images": [
+    {
+      "uri": "textures/Material_64_baseColor.png"
+    },
+    {
+      "uri": "textures/Material_64_normal.png"
+    },
+    {
+      "uri": "textures/Material_64_metallicRoughness.png"
+    }
+  ],
+  "materials": [
+    {
+      "alphaMode": "BLEND",
+      "doubleSided": true,
+      "emissiveFactor": [
+        0,
+        0,
+        0
+      ],
+      "name": "Material_64",
+      "normalTexture": {
+        "index": 1,
+        "scale": 1,
+        "texCoord": 0
+      },
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.90000000000000002,
+          0.90000000000000002,
+          0.90000000000000002,
+          1
+        ],
+        "baseColorTexture": {
+          "index": 0,
+          "texCoord": 0
+        },
+        "metallicFactor": 1,
+        "metallicRoughnessTexture": {
+          "index": 2,
+          "texCoord": 0
+        },
+        "roughnessFactor": 0.69999999999999996
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Statue_Material #64_0",
+      "primitives": [
+        {
+          "attributes": {
+            "NORMAL": 1,
+            "POSITION": 0,
+            "TANGENT": 2,
+            "TEXCOORD_0": 3
+          },
+          "indices": 4,
+          "material": 0,
+          "mode": 4
+        }
+      ]
+    },
+    {
+      "name": "Blaetter_Material #64_0",
+      "primitives": [
+        {
+          "attributes": {
+            "NORMAL": 6,
+            "POSITION": 5,
+            "TANGENT": 7,
+            "TEXCOORD_0": 8
+          },
+          "indices": 9,
+          "material": 0,
+          "mode": 4
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "children": [
+        1
+      ],
+      "name": "RootNode (gltf orientation matrix)",
+      "rotation": [
+        -0.70710678118654746,
+        -0,
+        -0,
+        0.70710678118654757
+      ]
+    },
+    {
+      "children": [
+        2
+      ],
+      "name": "RootNode (model correction matrix)"
+    },
+    {
+      "children": [
+        3
+      ],
+      "matrix": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        -1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      "name": "d9c8b1c8de274350b17f814376729706.fbx"
+    },
+    {
+      "children": [
+        4,
+        6
+      ],
+      "name": "RootNode"
+    },
+    {
+      "children": [
+        5
+      ],
+      "matrix": [
+        0.99978856275453465,
+        -0.020562825321973743,
+        0,
+        0,
+        0,
+        2.2204460492503131e-16,
+        -1,
+        0,
+        0.020562825321973743,
+        0.99978856275453465,
+        2.2204460492503131e-16,
+        0,
+        7.7039580345153809,
+        180.870361328125,
+        33.602313995361328,
+        1
+      ],
+      "name": "Statue"
+    },
+    {
+      "mesh": 0,
+      "name": "Statue_Material #64_0"
+    },
+    {
+      "children": [
+        7
+      ],
+      "matrix": [
+        -0.37778346412910402,
+        0.87028429761777604,
+        0.048835160497165075,
+        0,
+        -0.87136277656489103,
+        -0.37569043191882423,
+        -0.045642618084065216,
+        0,
+        -0.022500162348603608,
+        -0.062943342810838354,
+        0.94764536741942584,
+        0,
+        12.65635871887207,
+        124.84253692626953,
+        32.037960052490234,
+        1
+      ],
+      "name": "Blaetter"
+    },
+    {
+      "children": [
+        8
+      ],
+      "matrix": [
+        1,
+        0,
+        -0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        -7.5126934051513672,
+        0,
+        1
+      ],
+      "name": ""
+    },
+    {
+      "mesh": 1,
+      "name": "Blaetter_Material #64_0"
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "scene": 0,
+  "scenes": [
+    {
+      "name": "OSG_Scene",
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "textures": [
+    {
+      "sampler": 0,
+      "source": 0
+    },
+    {
+      "sampler": 0,
+      "source": 1
+    },
+    {
+      "sampler": 0,
+      "source": 2
+    }
+  ]
+}
+
