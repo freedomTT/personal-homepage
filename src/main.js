@@ -1,6 +1,6 @@
 import "./style/main.less";
 import $ from "jquery";
-import {gsap, Power0, Elastic} from "gsap";
+import {gsap} from "gsap";
 import scrollTrigger from "gsap/dist/ScrollTrigger.js";
 import ScrollToPlugin from "gsap/dist/ScrollToPlugin.js";
 import * as THREE from "three";
@@ -16,7 +16,6 @@ import {RGBShiftShader} from "three/examples/jsm/shaders/RGBShiftShader.js";
 import {ShadowMesh} from "three/examples/jsm/objects/ShadowMesh.js";
 import {FBXLoader} from "three/examples/jsm/loaders/FBXLoader.js";
 import {Reflector} from "three/examples/jsm/objects/Reflector.js";
-import PhyTouch from "phy-touch";
 
 let DarkMaskShader = {
 
@@ -219,19 +218,23 @@ appClass.prototype = {
 	* @desc common
 	*  */
   resizeDisplayGL: function () {
+    let w = document.body.clientWidth;
+    let h = document.body.clientHeight;
     this.recalcAspectRatio();
-    this.renderer.setSize(this.canvas.offsetWidth, this.canvas.offsetHeight, false);
+    this.renderer.setSize(w, h, false);
     if (this.bloomComposerScenePerson) {
-      this.bloomComposerScenePerson.setSize(this.canvas.offsetWidth, this.canvas.offsetHeight);
+      this.bloomComposerScenePerson.setSize(w, h);
     }
     if (this.bloomComposerSceneMain) {
-      this.bloomComposerSceneMain.setSize(this.canvas.offsetWidth, this.canvas.offsetHeight);
+      this.bloomComposerSceneMain.setSize(w, h);
     }
     this.updateCamera();
   },
 
   recalcAspectRatio: function () {
-    this.aspectRatio = (this.canvas.offsetHeight === 0) ? 1 : this.canvas.offsetWidth / this.canvas.offsetHeight;
+    let w = document.body.clientWidth;
+    let h = document.body.clientHeight;
+    this.aspectRatio = (h === 0) ? 1 : w / h;
   },
 
   updateCamera: function () {
@@ -253,8 +256,8 @@ appClass.prototype = {
     if (!this.isLoading) {
       let delta = this.clock.getDelta();
       let process = this.process.value;
-      let wH = window.innerHeight;
-      let wW = window.innerWidth;
+      let wH = document.body.clientHeight;
+      let wW = document.body.clientWidth;
       let pH = wH * (process / 100);
       if (!this.renderer.autoClear) this.renderer.clear();
       let frountParams = [0, pH, wW, wH];
@@ -358,7 +361,7 @@ appClass.prototype = {
     let geometry = new THREE.PlaneBufferGeometry(1000, 1000, 1);
     let groundMirror = new Reflector(geometry, {
       clipBias: 0,
-      textureWidth: window.innerWidth,
+      textureWidth: document.body.clientWidth,
       textureHeight: window.innerHeight,
       color: 0x999999,
     });
@@ -780,7 +783,7 @@ appClass.prototype = {
 
     let renderPersonScene = new RenderPass(this.personScene, this.personCamera);
 
-    let bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+    let bloomPass = new UnrealBloomPass(new THREE.Vector2(document.body.clientWidth, window.innerHeight), 1.5, 0.4, 0.85);
     bloomPass.exposure = params.exposure;
     bloomPass.threshold = params.bloomThreshold;
     bloomPass.strength = params.bloomStrength;
@@ -835,7 +838,7 @@ appClass.prototype = {
     };
     let renderMainScene = new RenderPass(this.mainScene, this.mainCamera);
 
-    let bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+    let bloomPass = new UnrealBloomPass(new THREE.Vector2(document.body.clientWidth, window.innerHeight), 1.5, 0.4, 0.85);
     bloomPass.exposure = params.exposure;
     bloomPass.threshold = params.bloomThreshold;
     bloomPass.strength = params.bloomStrength;
