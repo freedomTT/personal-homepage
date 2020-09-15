@@ -905,13 +905,13 @@ appClass.prototype = {
       let type = $(this).data("target");
       switch (type) {
       case "home":
-        gsap.to(".scrollbar", 2, {scrollTo: 0});
+        gsap.to("html", 2, {scrollTo: 0});
         break;
       case "work":
-        gsap.to(".scrollbar", 2, {scrollTo: 6000});
+        gsap.to("html", 2, {scrollTo: 6000});
         break;
       case "about":
-        gsap.to(".scrollbar", 2, {scrollTo: 10000});
+        gsap.to("html", 2, {scrollTo: 10000});
         break;
       case "blog":
         window.open("http://blog.luozhongdao.com/");
