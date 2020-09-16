@@ -5,6 +5,7 @@ import scrollTrigger from "gsap/dist/ScrollTrigger.js";
 import ScrollToPlugin from "gsap/dist/ScrollToPlugin.js";
 import * as THREE from "three";
 import {GLTFLoader} from "three/examples/jsm/loaders/GLTFLoader.js";
+import {DRACOLoader} from "three/examples/jsm/loaders/DRACOLoader.js";
 import {EffectComposer} from "three/examples/jsm/postprocessing/EffectComposer.js";
 import {RenderPass} from "three/examples/jsm/postprocessing/RenderPass.js";
 import {UnrealBloomPass} from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
@@ -14,7 +15,6 @@ import {ShaderPass} from "three/examples/jsm/postprocessing/ShaderPass.js";
 import {FilmPass} from "three/examples/jsm/postprocessing/FilmPass.js";
 import {RGBShiftShader} from "three/examples/jsm/shaders/RGBShiftShader.js";
 import {ShadowMesh} from "three/examples/jsm/objects/ShadowMesh.js";
-import {FBXLoader} from "three/examples/jsm/loaders/FBXLoader.js";
 import {Reflector} from "three/examples/jsm/objects/Reflector.js";
 
 let DarkMaskShader = {
@@ -111,11 +111,16 @@ appClass.prototype = {
 
     app.isLoading = true;
 
+    // 加载 glTF 格式的模型
+    let GLTFloader = new GLTFLoader();/*实例化加载器*/
+    let dracoLoader = new DRACOLoader();
+    dracoLoader.setDecoderPath("./static/lib/draco/gltf/");
+    dracoLoader.setDecoderConfig({type: "js"});
+    GLTFloader.setDRACOLoader(dracoLoader);
+
     function model1(chain) {
-      // load human model
-      let loader = new FBXLoader();
-      loader.load(
-        "./static/model/fastrun2.fbx",
+      GLTFloader.load(
+        "./static/model/fastrun/fastrundraco.gltf",
         (model) => {
           app.model1 = model;
           chain.next();
@@ -130,9 +135,7 @@ appClass.prototype = {
     }
 
     function model2(chain) {
-      // 加载 glTF 格式的模型
-      let loader = new GLTFLoader();/*实例化加载器*/
-      loader.load("./static/model/street.gltf", (obj) => {
+      GLTFloader.load("./static/model/street/streetdraco.gltf", (obj) => {
         app.model2 = obj;
         chain.next();
       }, function (xhr) {
@@ -143,33 +146,24 @@ appClass.prototype = {
     }
 
     function model3(chain) {
-      // 加载 人物 模型
-      let loader = new FBXLoader();
-      loader.load(
-        "./static/model/walk2.fbx",
-        (model) => {
-          app.model3 = model;
-          chain.next();
-        },
-        (xhr) => {
-          setProcess(parseInt((xhr.loaded / xhr.total) * 25) + 50);
-        },
-        (error) => {
-          console.log("An error happened");
-        }
-      );
-    }
-
-    function model4(chain) {
-      // 加载 glTF 格式的模型
-      let loader = new GLTFLoader();/*实例化加载器*/
-      loader.load("./static/model/darkperson/scene.gltf", (obj) => {
-        app.model4 = obj.scene;
+      GLTFloader.load("./static/model/walk_out/walkdraco.gltf", (obj) => {
+        app.model3 = obj;
         chain.next();
       }, function (xhr) {
         setProcess(parseInt((xhr.loaded / xhr.total) * 25) + 75);
       }, function (error) {
-        console.log("load error!" + error);
+        console.log(error);
+      });
+    }
+
+    function model4(chain) {
+      GLTFloader.load("./static/model/darkperson/scene.gltf", (obj) => {
+        app.model4 = obj;
+        chain.next();
+      }, function (xhr) {
+        setProcess(parseInt((xhr.loaded / xhr.total) * 25) + 75);
+      }, function (error) {
+        console.log(error);
       });
     }
 
@@ -341,7 +335,7 @@ appClass.prototype = {
       let material = new THREE.MeshStandardMaterial({
         emissive: colors[i % 2],
         color: "#ffffff",
-        roughness: 0.5,
+        roughness: 0.2,
       });
       let line = new THREE.Mesh(geometry, material);
       line._speed = 5 + Math.random() * speed;
@@ -373,34 +367,34 @@ appClass.prototype = {
     // background
     let bgGeometry = new THREE.SphereGeometry(1000, 50, 50);
     let bgMaterial = new THREE.MeshPhongMaterial({
-      color: "#080646",
+      color: "#060322",
       shininess: 0,
       side: THREE.BackSide
     });
     let bgMesh = new THREE.Mesh(bgGeometry, bgMaterial);
     this.personScene.add(bgMesh);
 
-    let ambientLight = new THREE.AmbientLight("#ffffff", 0.2);
+    let ambientLight = new THREE.AmbientLight("#ffffff", 0.3);
     this.personScene.add(ambientLight);
 
     // load human model
     {
       let model = this.model1;
-      model.scale.set(0.3, 0.3, 0.3);
-      model.traverse(function (child) {
+      model.scene.scale.set(35, 35, 35);
+      model.scene.traverse(function (child) {
         if (child.isMesh) {
           child.castShadow = true;
           child.receiveShadow = true;
         }
       });
       let animations = model.animations;
-      this.personMixer = new THREE.AnimationMixer(model);
+      this.personMixer = new THREE.AnimationMixer(model.scene);
       let actions = [];
       for (let i = 0; i < animations.length; i++) {
         actions[i] = this.personMixer.clipAction(animations[i]);
       }
       actions[0].play();
-      this.personScene.add(model);
+      this.personScene.add(model.scene);
     }
 
     // add floorCircle
@@ -582,7 +576,7 @@ appClass.prototype = {
     let bgMaterial = new THREE.MeshLambertMaterial({
       color: "#ffffff",
       side: THREE.DoubleSide,
-      shading: THREE.FlatShading
+      flatShading: true
     });
     let bgMesh = new THREE.Mesh(bgGeometry, bgMaterial);
 
@@ -646,31 +640,31 @@ appClass.prototype = {
     // 加载 人物 模型
     {
       let model = this.model3;
-      model.scale.set(0.14, 0.14, 0.14);
-      model.traverse(function (child) {
+      model.scene.scale.set(20, 20, 20);
+      model.scene.traverse(function (child) {
         if (child.isMesh) {
           child.castShadow = true;
           child.receiveShadow = true;
         }
       });
       let animations = model.animations;
-      this.personMixer2 = new THREE.AnimationMixer(model);
+      this.personMixer2 = new THREE.AnimationMixer(model.scene);
       let actions = [];
       for (let i = 0; i < animations.length; i++) {
         actions[i] = this.personMixer2.clipAction(animations[i]);
       }
       actions[0].play();
 
-      model.position.set(-50, -10, 4000);
-      model.rotateY(Math.PI);
-      this.streetCharacter = model;
-      this.mainScene.add(model);
+      model.scene.position.set(-50, -10, 4000);
+      model.scene.rotateY(Math.PI);
+      this.streetCharacter = model.scene;
+      this.mainScene.add(model.scene);
     }
     // 加载 模型
     {
       let model = this.model4;
-      model.scale.set(0.14, 0.14, 0.14);
-      model.traverse(function (child) {
+      model.scene.scale.set(0.14, 0.14, 0.14);
+      model.scene.traverse(function (child) {
         if (child.isMesh) {
           child.material.transparent = false;
           child.material.depthWrite = true;
@@ -678,11 +672,11 @@ appClass.prototype = {
         }
       });
 
-      model.position.set(-60, -20, -100);
-      model.rotation.y = Math.PI / 180 * 90;
-      this.mainModel = model;
-      this.mainScene.add(model);
-      let model2 = model.clone();
+      model.scene.position.set(-60, -20, -100);
+      model.scene.rotation.y = Math.PI / 180 * 90;
+      this.mainModel = model.scene;
+      this.mainScene.add(model.scene);
+      let model2 = model.scene.clone();
       let m = new THREE.Matrix4();
       let vec = new THREE.Vector3(0, 0, 1);
 
@@ -1085,7 +1079,7 @@ appClass.prototype = {
       onStart: () => {
         this.mainSceneProcess.isInFooter = true;
 
-        footerFl = setInterval(animeIn, 3000);
+        footerFl = setInterval(animeIn, 2000);
 
         function animeIn() {
           setTimeout(animeOne, 700);
