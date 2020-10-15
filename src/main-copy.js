@@ -134,6 +134,38 @@ class appClass {
       );
     }
 
+    function model2(chain) {
+      GLTFloader.load("./static/model/street/streetdraco.gltf", (obj) => {
+        app.model2 = obj;
+        chain.next();
+      }, function (xhr) {
+        setProcess(parseInt((xhr.loaded / xhr.total) * 25) + 25);
+      }, function (error) {
+        console.log("load error!" + error);
+      });
+    }
+
+    function model3(chain) {
+      GLTFloader.load("./static/model/walk_out/walkdraco.gltf", (obj) => {
+        app.model3 = obj;
+        chain.next();
+      }, function (xhr) {
+        setProcess(parseInt((xhr.loaded / xhr.total) * 25) + 75);
+      }, function (error) {
+        console.log(error);
+      });
+    }
+
+    function model4(chain) {
+      GLTFloader.load("./static/model/darkperson/scene.gltf", (obj) => {
+        app.model4 = obj;
+        chain.next();
+      }, function (xhr) {
+        setProcess(parseInt((xhr.loaded / xhr.total) * 25) + 75);
+      }, function (error) {
+        console.log(error);
+      });
+    }
 
     function setProcess(num) {
       $(".loading-process").text(num + "%");
@@ -143,6 +175,9 @@ class appClass {
 
     function* loadAllModels() {
       yield model1(chain);
+      yield model2(chain);
+      yield model3(chain);
+      yield model4(chain);
       app.initPersonScense();
       app.initMainScence();
       app.initTimeLine();
@@ -207,6 +242,10 @@ class appClass {
     if (this.mainCamera) {
       this.mainCamera.aspect = this.aspectRatio;
       this.mainCamera.updateProjectionMatrix();
+    }
+    if (this.seaCamera) {
+      this.seaCamera.aspect = this.aspectRatio;
+      this.seaCamera.updateProjectionMatrix();
     }
   }
 
@@ -401,17 +440,17 @@ class appClass {
       ]);
       targetCurve.curveType = "catmullrom";
 
-      let points = cameraCurve.getPoints(100);
-      let geometry = new THREE.BufferGeometry().setFromPoints(points);
-      let material = new THREE.LineBasicMaterial({color: 0xff0000});
-      let points2 = targetCurve.getPoints(100);
-      let curveObject = new THREE.Line(geometry, material);
-      this.personScene.add(curveObject);
-
-      let geometry2 = new THREE.BufferGeometry().setFromPoints(points2);
-      let material2 = new THREE.LineBasicMaterial({color: 0x00ff00});
-      let curveObject2 = new THREE.Line(geometry2, material2);
-      this.personScene.add(curveObject2);
+      // let points = cameraCurve.getPoints(100);
+      // let geometry = new THREE.BufferGeometry().setFromPoints(points);
+      // let material = new THREE.LineBasicMaterial({color: 0xff0000});
+      // let points2 = targetCurve.getPoints(100);
+      // let curveObject = new THREE.Line(geometry, material);
+      // this.personScene.add(curveObject);
+      //
+      // let geometry2 = new THREE.BufferGeometry().setFromPoints(points2);
+      // let material2 = new THREE.LineBasicMaterial({color: 0x00ff00});
+      // let curveObject2 = new THREE.Line(geometry2, material2);
+      // this.personScene.add(curveObject2);
 
       return {cameraCurve, targetCurve};
     }
@@ -556,6 +595,112 @@ class appClass {
     this.mainSceneProcess.streetLight = streetLight;
 
     /*
+		* @desc model
+		* */
+    // 加载 glTF 格式的模型
+    {
+      let obj = this.model2;
+      obj.scene.position.x = -80;
+      obj.scene.position.y = 0;
+      obj.scene.position.z = 3000;
+      obj.scene.scale.set(20, 20, 20);
+      obj.scene.rotateY(Math.PI / 2);
+      obj.scene.rotateX(Math.PI / 180 * (-2));
+      obj.scene.traverse(function (child) {
+        if (child.isMesh) {
+          child.material.wireframe = true;
+        }
+      });
+      this.mainScene.add(obj.scene);
+
+      this.mainCamera.lookAt(0, 50, 0);
+
+      this.mainCamera.position.set(-50, 40, 2000);
+
+      // create camera path params
+
+      function createScenseCameraPath() {
+        let cameraCurve = new THREE.CatmullRomCurve3([
+          new THREE.Vector3(-50, 40, 3500),
+          new THREE.Vector3(-40, 20, 2000),
+          new THREE.Vector3(0, 10, 1000),
+          new THREE.Vector3(10, 0, 800),
+          new THREE.Vector3(0, 0, 0),
+        ]);
+        cameraCurve.curveType = "catmullrom";
+        cameraCurve.tension = 0.1;
+        let targetCurve = new THREE.CatmullRomCurve3([
+          new THREE.Vector3(0, 50, 0),
+          new THREE.Vector3(0, 0, -200)
+        ]);
+        targetCurve.curveType = "catmullrom";
+
+        return {cameraCurve, targetCurve};
+      }
+
+      this.streetCameraPoints = createScenseCameraPath.apply(this);
+    }
+    // 加载 人物 模型
+    {
+      let model = this.model3;
+      model.scene.scale.set(20, 20, 20);
+      model.scene.traverse(function (child) {
+        if (child.isMesh) {
+          child.castShadow = true;
+          child.receiveShadow = true;
+        }
+      });
+      let animations = model.animations;
+      this.personMixer2 = new THREE.AnimationMixer(model.scene);
+      let actions = [];
+      for (let i = 0; i < animations.length; i++) {
+        actions[i] = this.personMixer2.clipAction(animations[i]);
+      }
+      actions[0].play();
+
+      model.scene.position.set(-50, -10, 4000);
+      model.scene.rotateY(Math.PI);
+      this.streetCharacter = model.scene;
+      this.mainScene.add(model.scene);
+    }
+    // 加载 模型
+    {
+      let model = this.model4;
+      model.scene.scale.set(0.14, 0.14, 0.14);
+      model.scene.traverse(function (child) {
+        if (child.isMesh) {
+          child.material.transparent = false;
+          child.material.depthWrite = true;
+          child.material.alphaTest = 0.1;
+        }
+      });
+
+      model.scene.position.set(-60, -20, -100);
+      model.scene.rotation.y = Math.PI / 180 * 90;
+      this.mainModel = model.scene;
+      this.mainScene.add(model.scene);
+      let model2 = model.scene.clone();
+      let m = new THREE.Matrix4();
+      let vec = new THREE.Vector3(0, 0, 1);
+
+      m.set(1 - 2 * vec.x * vec.x, -2 * vec.x * vec.y, -2 * vec.x * vec.z, 0,
+        -2 * vec.x * vec.y, 1 - 2 * vec.y * vec.y, -2 * vec.y * vec.z, 0,
+        -2 * vec.x * vec.z, -2 * vec.y * vec.z, 1 - 2 * vec.z * vec.z, 0,
+        0, 0, 0, 1);
+      model2.applyMatrix(m);
+      model2.position.set(60, -20, -100);
+      model2.rotation.y = -Math.PI / 180 * 90;
+      this.mainModel2 = model2;
+      this.mainScene.add(model2);
+
+
+      let pLight = new THREE.PointLight("#ffffff", 1, 0, 2);
+      pLight.distance = 5000;
+      pLight.position.set(0, 0, -5);
+      this.mainScene.add(pLight);
+    }
+
+    /*
 		*
 		* footer
 		*
@@ -592,6 +737,34 @@ class appClass {
   }
 
   sceneMainAnimate(delta) {
+    // 相机动画
+    if (this.streetCameraPoints && !this.mainSceneProcess.isInFooter) {
+      let cameraPoints = this.streetCameraPoints;
+      let sceneCameraPoint = cameraPoints.cameraCurve.getPointAt(this.mainSceneProcess && this.mainSceneProcess.value ? this.mainSceneProcess.value : 0);
+      let sceneCameraTargetPoint = cameraPoints.targetCurve.getPointAt(this.mainSceneProcess && this.mainSceneProcess.value ? this.mainSceneProcess.value : 0);
+      this.mainCamera.lookAt(sceneCameraTargetPoint);
+      this.mainCamera.position.set(sceneCameraPoint.x, sceneCameraPoint.y, sceneCameraPoint.z);
+    }
+    // 人物动画
+    if (this.streetCameraPoints && this.streetCharacter) {
+      let points = this.streetCameraPoints.cameraCurve;
+      let point = points.getPointAt(this.mainSceneProcess && this.mainSceneProcess.value ? this.mainSceneProcess.value : 0);
+      let p1 = this.streetCharacter.position;
+      let p2 = point;
+      let x1 = p1.x, y1 = p1.z, x2 = p2.x, y2 = p2.z;
+      let cos = (x1 * x2 + y1 * y2) / (Math.sqrt((x1 * x1 + y1 * y1)) * Math.sqrt((x2 * x2 + y2 * y2)));
+      let x = 2 * Math.PI + Math.acos(cos);
+      this.streetCharacter.rotation.y = ((x2 - x1 < 0 ? -1 : 1) * Math.PI / 180 * x);
+      this.streetCharacter.position.set(point.x, point.y - 30, point.z - (100 + 118 * this.mainSceneProcess.value));
+    }
+    if (this.personMixer2 && this.mainSceneProcess.characterAnimateRun) {
+      this.personMixer2.update(delta);
+    }
+
+    if (this.mainModel) {
+      this.mainModel.rotateY(-Math.PI / 180);
+      this.mainModel2.rotateY(Math.PI / 180);
+    }
   }
 
   /*
@@ -599,9 +772,9 @@ class appClass {
 	* */
   composerScenePerson() {
     const params = {
-      exposure: 0,
+      exposure: 1,
       bloomThreshold: 0,
-      bloomStrength: 0,
+      bloomStrength: 1.5,
       bloomRadius: 0
     };
 
